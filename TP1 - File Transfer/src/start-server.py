@@ -1,15 +1,16 @@
 import sys
-from lib.client_helper import *
+from lib.server_helper import *
 
 def main(args):
     try:
         useFullArgs = args[1:]
         if '-h' in useFullArgs:
-            showDownloadUsage()
+            showServerUsage()
         else:
-            createClientAndDownloadFromServer(useFullArgs)
+            createServerAndListenStartConnection(useFullArgs)
                 
-    except Exception:
+    except KeyboardInterrupt as e:
+        print(e)
         print("\nExiting...")
         sys.exit(0)
 
