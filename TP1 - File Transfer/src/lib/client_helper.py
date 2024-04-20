@@ -10,6 +10,8 @@ def createClientAndUploadToServer(args):
 def createClientAndDownloadFromServer(args):
     return 0
 
+# Esto debería borrarse y crear el parser de cliente directamente,
+# que automáticamente muestra este formato de uso cuando le pasas -h
 def showDownloadUsage():
     print('usage: download [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]\n')
     print('<command description>\n')
@@ -22,6 +24,7 @@ def showDownloadUsage():
     print('\t-d, --dst\tdestination file path')
     print('\t-n, --name\tfile name\n')
 
+# Idem con esto
 def showUploadUsage():
     print('usage: upload [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]\n')
     print('<command description>\n')
