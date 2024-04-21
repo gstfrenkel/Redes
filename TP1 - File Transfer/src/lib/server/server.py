@@ -30,16 +30,16 @@ class Server:
                 if address not in self.clients:
                     self.clients[address] = Queue()
 
-                    client = Thread(target=self.handleClientMessage, args=(address, self.clients[address]))
+                    client = Thread(target=self.handle_client_msg, args=(address, self.clients[address]))
                     client.start()
 
                 self.clients[address].put(message)
             except Exception as e:
                 print(f"Failed to receive message: {e}")
 
-    def handleClientMessage(self, address, queue):
+    def handle_client_msg(self, address, queue):
         client = ServerClient()
-        client.handleClientMessage(address, queue)
+        client.handle_client_msg(address, queue)
         del(self.clients[address])
 
 

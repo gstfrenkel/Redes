@@ -17,25 +17,25 @@ class Message:
 		seq_num_bytes = self.seqNum.to_bytes(4, byteorder='big')
 		return type_bytes + seq_num_bytes + self.data.encode()
 	
-	def isAck(self):
+	def is_ack(self):
 		return self.type == ACK_TYPE
 
-	def isSyn(self):
+	def is_syn(self):
 		return self.type == SYN_TYPE
 
-	def isSynOk(self):
+	def is_syn_ok(self):
 		return self.type == SYN_OK_TYPE
 
-	def isEnd(self):
+	def is_end(self):
 		return self.type == END_TYPE
 
-	def isEndOk(self):
+	def is_end_ok(self):
 		return self.type == END_OK_TYPE
 
-	def getMessageData(self):
+	def get_data(self):
 		return self.data
 
-	def getMessageToSend(self):
+	def get_message_to_send(self):
 		return
 	 
 	@classmethod
@@ -46,21 +46,21 @@ class Message:
 		return cls(type, seqNum, data)
 
 	@classmethod
-	def newAck(cls):
+	def new_ack(cls):
 		return cls(ACK_TYPE)
 
 	@classmethod
-	def newSyn(cls):
+	def new_syn(cls):
 		return cls(SYN_TYPE)
 
 	@classmethod
-	def newSynOk(cls):
+	def new_syn_ok(cls):
 		return cls(SYN_OK_TYPE)
 	
 	@classmethod
-	def newEnd(cls):
+	def new_end(cls):
 		return cls(END_TYPE)
 
 	@classmethod
-	def newEndOk(cls):
+	def new_end_ok(cls):
 		return cls(END_OK_TYPE)

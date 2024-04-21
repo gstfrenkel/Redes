@@ -3,9 +3,9 @@ from lib.message import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
 
 class Client:
-    def __init__(self, serverAddress, serverPort):
-        self.serverAddress = str(serverAddress)
-        self.serverPort = int(serverPort)
+    def __init__(self, srv_address, srv_port):
+        self.srv_address = str(srv_address)
+        self.srv_port = int(srv_port)
         self.connected = False
         self.socket = None
 
@@ -16,9 +16,9 @@ class Client:
         syn_tries = 0
         while syn_tries < MAX_SYN_TRIES:
             try:
-                self.socket.sendto(Message.newSyn().encode(), (self.serverAddress, self.serverPort))
-                encondedMessage, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                decodedMessage = Message.decode(encondedMessage)
+                self.socket.sendto(Message.new_syn().encode(), (self.srv_address, self.srv_port))
+                encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                decoded_msg = Message.decode(encoded_msg)
                 
                 break
             except timeout:
@@ -28,21 +28,21 @@ class Client:
         if syn_tries == MAX_SYN_TRIES:
             self.socket.close()
             self.socket = None
-            print("Maximum SYN tries reached")
+            print("Maximun SYN tries reached.")
             raise KeyboardInterrupt
 
-        if decodedMessage.isAck():
-            self.socket.sendto(Message.newSynOk().encode(), (self.serverAddress, self.serverPort))
-            print("Connected to server")
+        if decoded_msg.is_ack():
+            self.socket.sendto(Message.new_syn_ok().encode(), (self.srv_address, self.srv_port))
+            print("Connected to server.")
             self.connected = True
 
     def disconnect(self):
         fin_tries = 0
         while fin_tries < MAX_FIN_TRIES:
             try:
-                self.socket.sendto(Message.newEnd().encode(), (self.serverAddress, self.serverPort))
-                encodedMessage, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                decodedMessage = Message.decode(encodedMessage)
+                self.socket.sendto(Message.new_end().encode(), (self.srv_address, self.srv_port))
+                encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                decoded_msg = Message.decode(encoded_msg)
 
                 break
             except Exception as e:
@@ -50,18 +50,17 @@ class Client:
                 fin_tries += 1
 
         if fin_tries == MAX_FIN_TRIES:
-            print("Maximun FIN tries reached")
+            print("Maximun FIN tries reached.")
             return
 
-        if decodedMessage.isAck():
-            self.socket.sendto(Message.newEndOk().encode(), (self.serverAddress, self.serverPort))
+        if decoded_msg.is_ack():
+            self.socket.sendto(Message.new_end_ok().encode(), (self.srv_address, self.srv_port))
             self.socket.close()
             self.connected = False
-            print("Disconnected from server")
+            print("Disconnected from server.")
 
-    def startUploading(self):
+    def upload(self):
         return
         message = '1|1|\\|\\' # primer 1 de upload y segundo de ACK
 
-        self.socket.sendto(Message(1, message).encode(), (self.serverAddress, self.serverPort)) # aca habria que mandar el upload pero con una flag de conectado
-        
+        self.socket.sendto(Message(1, message).encode(), (self.srv_address, self.srv_port)) # aca habria que mandar el upload pero con una flag de conectado

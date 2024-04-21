@@ -14,64 +14,64 @@ class ServerClient:
         self.socket = cli_socket
 
     def start(self):
-        serverSocket = socket(AF_INET, SOCK_DGRAM)
-        serverSocket.bind((self.address, self.port))
+        srv_socket = socket(AF_INET, SOCK_DGRAM)
+        srv_socket.bind((self.address, self.port))
 
-        self.listen(serverSocket)
+        self.listen(srv_socket)
 
-    def handleClientMessage(self, address, queue):
+    def handle_client_msg(self, address, queue):
         while not self.connection_ended:
             message = Message.decode(queue.get())
 
-            if message.isSyn():
-                self.processSynMessage(address)
+            if message.is_syn():
+                self.process_syn_msg(address)
                 self.syn_received = True
-            elif message.isSynOk():
+            elif message.is_syn_ok():
                 if not self.syn_received:
                     print("Unable to complete handshake until Syn is first received.")
                     continue
-                self.processSynOkMessage(address)
+                self.process_syn_ok_msg(address)
                 self.handshake_complete = True
             elif not self.handshake_complete:
                 print(f"Unable to process message until {address} completes handshake.")
                 continue
-            elif message.isEnd():
-                self.processFinMessage(address)
+            elif message.is_end():
+                self.process_end_msg(address)
                 self.fin_received = True
-            elif message.isEndOk():
+            elif message.is_end_ok():
                 if not self.fin_received:
                     print("Unable to complete handshake until Syn is first received.")
                     continue
-                self.processFinOkMessage(address)
+                self.process_end_ok_msg(address)
                 self.connection_ended = True
             else:
-                self.processDataMessage(address, message)
+                self.process_data_msg(address, message)
 
         self.socket.close()
 
-    def processSynMessage(self, address):
+    def process_syn_msg(self, address):
         print(f'SYN message arrived from client {address}, sending ACK...')
 
         try:
-            self.socket.sendto(Message.newAck().encode(), address)
+            self.socket.sendto(Message.new_ack().encode(), address)
         except timeout:
             print("Timeout waiting for client SYN_OK. Disconnecting...")
 
 
-    def processSynOkMessage(self, address):
+    def process_syn_ok_msg(self, address):
         print(f'SYN_OK message arrived from client {address}. Connection established')
 
 
-    def processFinMessage(self, address):
+    def process_end_msg(self, address):
         try:
             print(f'FIN message arrived from client {address}, sending ACK...')
-            self.socket.sendto(Message.newAck().encode(), address)
+            self.socket.sendto(Message.new_ack().encode(), address)
         except timeout:
-            print("Timeout waiting for client FIN_OK")
+            print("Timeout waiting for client END_OK.")
 
 
-    def processFinOkMessage(self, address):
+    def process_end_ok_msg(self, address):
         print(f'FIN_OK message arrived from client {address}. Disconnection successfully')
 
-    def processDataMessage(self, address, message):
+    def process_data_msg(self, address, message):
         print(f'Data message arrived: {message}')
