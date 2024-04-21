@@ -1,5 +1,5 @@
 from socket import *
-from lib.messages import *
+from lib.message import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
 
 class Client:
@@ -16,9 +16,9 @@ class Client:
         syn_tries = 0
         while syn_tries < MAX_SYN_TRIES:
             try:
-                self.socket.sendto(SYN_MESSAGE.encode(), (self.serverAddress, self.serverPort))
+                self.socket.sendto(Message.newSynMessage().encode(), (self.serverAddress, self.serverPort))
                 encondedMessage, serverSocket = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                decodedMessage = encondedMessage.decode()
+                decodedMessage = Message.decode(encondedMessage)
                 
                 break
             except timeout:
@@ -31,8 +31,8 @@ class Client:
             print("Maximum SYN tries reached")
             raise KeyboardInterrupt
 
-        if decodedMessage == SYN_ACK_MESSAGE:
-            self.socket.sendto(CONNECTED_MESSAGE.encode(), (self.serverAddress, self.serverPort))
+        if decodedMessage.isSynAckMessage():
+            self.socket.sendto(Message.newSynOkMessage().encode(), (self.serverAddress, self.serverPort))
             print("Connected to server")
             self.connected = True
 
@@ -40,12 +40,12 @@ class Client:
         fin_tries = 0
         while fin_tries < MAX_FIN_TRIES:
             try:
-                self.socket.sendto(FIN_MESSAGE.encode(), (self.serverAddress, self.serverPort))
+                self.socket.sendto(Message.newFinMessage().encode(), (self.serverAddress, self.serverPort))
                 encondedMessage, serverAddress = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                decodedMessage = encondedMessage.decode()
+                decodedMessage = Message.decode(encondedMessage)
 
                 break
-            except socket.timeout:
+            except:
                 print("Timeout waiting for server ACK response. Retrying...")
                 fin_tries += 1
 
@@ -53,12 +53,13 @@ class Client:
             print("Maximum FIN tries reached")
             raise KeyboardInterrupt
 
-        if decodedMessage == FIN_ACK_MESSAGE:
-            self.socket.sendto(DISCONNECTED_MESSAGE.encode(), (self.serverAddress, self.serverPort))
+        if decodedMessage.isFinAckMessage():
+            self.socket.sendto(Message.newFinOkMessage().encode(), (self.serverAddress, self.serverPort))
             self.socket.close()
             self.connected = False
             print("Disconnected from server")
 
     def startUploading(self):
-        message = '1|1|\\|\\' # primer 1 de upload y segundo de ACK
-        self.socket.sendto(message.encode(), (self.serverAddress, self.serverPort)) # aca habria que mandar el upload pero con una flag de conectado
+        return
+        #message = '1|1|\\|\\' # primer 1 de upload y segundo de ACK
+        #self.socket.sendto(Message(1, message).encode(), (self.serverAddress, self.serverPort)) # aca habria que mandar el upload pero con una flag de conectado

@@ -9,7 +9,8 @@ def main(args):
         else:
             createClientAndUploadToServer(useFullArgs)
                 
-    except Exception:
+    except Exception as e:
+        print(e)
         print("\nExiting...")
         sys.exit(0)
 

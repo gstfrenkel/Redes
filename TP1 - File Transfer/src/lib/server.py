@@ -1,8 +1,7 @@
-from socket import *
+from socket import * 
 from threading import * 
-from lib.messages import *
+from lib.message import * 
 from lib.constants import MAX_MESSAGE_SIZE, TIMEOUT
-import time
 
 class Server:
     def __init__(self, address, port):
@@ -33,7 +32,7 @@ class Server:
         clientSocket.settimeout(TIMEOUT)
         
         try:
-            clientSocket.sendto(SYN_ACK_MESSAGE.encode(), clientAddress)
+            clientSocket.sendto(Message.newSynAckMessage().encode(), clientAddress)
         except timeout:
             print("Timeout waiting for client SYN_OK. Disconnecting...")
 
@@ -46,16 +45,17 @@ class Server:
         
         self.clients[clientAddress] = clientSocket
 
+
     def processFinMessage(self, clientAddress):
         if clientAddress in self.clients:
             clientSocket = self.clients[clientAddress]
         else:
-            print(f'FIN message arrived from an unknown client')
+            print(f'FIN message arrived from an unconnected client: {clientAddress}')
             return
 
         try:
             print(f'FIN message arrived from client {clientAddress}, sending ACK...')
-            clientSocket.sendto(FIN_ACK_MESSAGE.encode(), clientAddress)
+            clientSocket.sendto(Message.newFinAckMessage().encode(), clientAddress)
         except timeout:
             print("Timeout waiting for client FIN_OK")
 
@@ -63,36 +63,37 @@ class Server:
         if clientAddress in self.clients:
             clientSocket = self.clients[clientAddress]
         else:
-            print(f'FIN_OK message arrived from an unknown client')
+            print(f'FIN_OK message arrived from an unconnected client: {clientAddress}')
             return
 
         clientSocket.close()
         del self.clients[clientAddress]
         print(f'FIN_OK message arrived from client {clientAddress}. Disconnection successfully')
 
-    #Upload handling
-        """ def processDataMessage(self, clientAddress, message):
+    def processDataMessage(self, clientAddress, message):
         if clientAddress not in self.clients:
-            print(f"Data message arrived from an unknown client")
+            print(f"Data message arrived from an unconnected client: {clientAddress}")
             return
         
-        print(f'Data message arrived: {message}') """
+        print(f'Data message arrived: {message}')
         
 
 
-    def handleClientMessage(self, clientAddress, message: bytes):
-        decodedMessage = message.decode()
-        if decodedMessage == SYN_MESSAGE:
+    def handleClientMessage(self, clientAddress, message: bytes):        
+        message = Message.decode(message)
+
+        if message.isSynMessage():
             self.processSynMessage(clientAddress)
 
-        elif decodedMessage == CONNECTED_MESSAGE:
+        elif message.isSynOkMessage():
             self.processSynOkMessage(clientAddress)
 
-        elif decodedMessage == FIN_MESSAGE:
+        elif message.isFinMessage():
             self.processFinMessage(clientAddress)
 
-        elif decodedMessage == DISCONNECTED_MESSAGE:
+        elif message.isFinOkMessage():
             self.processFinOkMessage(clientAddress)
 
         else:
-            self.processDataMessage(clientAddress, decodedMessage)
+            #self.processDataMessage(clientAddress, message)
+            print("aaaa")
