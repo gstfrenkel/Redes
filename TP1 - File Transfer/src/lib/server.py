@@ -59,11 +59,11 @@ class Server:
         clientSocket = socket(AF_INET, SOCK_DGRAM)
         clientSocket.settimeout(0.5)
         
-        self.clients[clientAddress[1]] = clientSocket
+        self.clients[clientAddress] = clientSocket
 
     def processFinMessage(self, clientAddress):
-        if clientAddress[1] in self.clients:
-            clientSocket = self.clients[clientAddress[1]]
+        if clientAddress in self.clients:
+            clientSocket = self.clients[clientAddress]
         else:
             print(f'FIN message arrived from an unknown client')
             return
@@ -75,14 +75,14 @@ class Server:
             print("Timeout waiting for client FIN_OK")
 
     def processFinOkMessage(self, clientAddress):
-        if clientAddress[1] in self.clients:
-            clientSocket = self.clients[clientAddress[1]]
+        if clientAddress in self.clients:
+            clientSocket = self.clients[clientAddress]
         else:
             print(f'FIN_OK message arrived from an unknown client')
             return
 
         clientSocket.close()
-        del self.clients[clientAddress[1]]
+        del self.clients[clientAddress]
         print(f'FIN_OK message arrived from client {clientAddress}. Disconnection successfully')
 
     def handleClient(self, clientAddress, message: bytes):
