@@ -1,7 +1,7 @@
 from socket import *
 from threading import * 
 from lib.messages import *
-from lib.constants import MAX_MESSAGE_SIZE
+from lib.constants import MAX_MESSAGE_SIZE, TIMEOUT
 import time
 
 class Server:
@@ -30,7 +30,7 @@ class Server:
     def processSynMessage(self, clientAddress):
         print(f'SYN message arrived from client {clientAddress}, sending ACK...')
         clientSocket = socket(AF_INET, SOCK_DGRAM)
-        clientSocket.settimeout(0.5)
+        clientSocket.settimeout(TIMEOUT)
         
         try:
             clientSocket.sendto(SYN_ACK_MESSAGE.encode(), clientAddress)
@@ -42,7 +42,7 @@ class Server:
     def processSynOkMessage(self, clientAddress):
         print(f'SYN_OK message arrived from client {clientAddress}. Connection established')
         clientSocket = socket(AF_INET, SOCK_DGRAM)
-        clientSocket.settimeout(0.5)
+        clientSocket.settimeout(TIMEOUT)
         
         self.clients[clientAddress] = clientSocket
 
@@ -70,6 +70,16 @@ class Server:
         del self.clients[clientAddress]
         print(f'FIN_OK message arrived from client {clientAddress}. Disconnection successfully')
 
+    #Upload handling
+        """ def processDataMessage(self, clientAddress, message):
+        if clientAddress not in self.clients:
+            print(f"Data message arrived from an unknown client")
+            return
+        
+        print(f'Data message arrived: {message}') """
+        
+
+
     def handleClientMessage(self, clientAddress, message: bytes):
         decodedMessage = message.decode()
         if decodedMessage == SYN_MESSAGE:
@@ -85,4 +95,4 @@ class Server:
             self.processFinOkMessage(clientAddress)
 
         else:
-            print(decodedMessage)
+            self.processDataMessage(clientAddress, decodedMessage)
