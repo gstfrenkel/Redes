@@ -4,7 +4,9 @@ def createClientAndUploadToServer(args):
     address =  args[args.index('-H') + 1]
     port = args[args.index('-p') + 1]
     client = Client(address, port)
+    client.connect()
     client.startUploading()
+    client.disconnect()
     return 0
 
 def createClientAndDownloadFromServer(args):
