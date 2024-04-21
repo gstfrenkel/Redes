@@ -1,6 +1,6 @@
 # Introducción
 
-Este trabajo práctico tiene como objetivo crear una aplicación de red para transferir archivos entre cliente y servidor. Se implementarán dos operaciones fundamentales: UPLOAD (enviar archivos del cliente al servidor) y DOWNLOAD (descargar archivos del servidor al cliente). Se tendrán en cuenta los protocolos TCP y UDP para la comunicación. TCP ofrece un servicio confiable orientado a la conexión, mientras que UDP es sin conexión y menos confiable. Se implementarán versiones de UDP con protocolo Stop & Wait y Go-Back-N con el objetivo de lograr una transferencia confiable al utilizar el protocolo..
+Este trabajo práctico tiene como objetivo crear una aplicación de red para transferir archivos entre cliente y servidor. Se implementarán dos operaciones fundamentales: UPLOAD (enviar archivos del cliente al servidor) y DOWNLOAD (descargar archivos del servidor al cliente). Se tendrán en cuenta los protocolos TCP y UDP para la comunicación. TCP ofrece un servicio confiable orientado a la conexión, mientras que UDP es sin conexión y menos confiable. Se implementarán versiones de UDP con protocolo Stop & Wait y Selective Repeat con el objetivo de lograr una transferencia confiable al utilizar el protocolo..
 
 # Hipótesis y suposiciones realizadas
 
