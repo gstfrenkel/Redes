@@ -1,10 +1,10 @@
-SYN_TYPE = int.from_bytes(b'\x01')
-SYN_OK_TYPE = int.from_bytes(b'\x02')
-END_TYPE = int.from_bytes(b'\x03')
-END_OK_TYPE = int.from_bytes(b'\x04')
-ACK_TYPE = int.from_bytes(b'\x05')
-DATA_TYPE = int.from_bytes(b'\x06')
-DATA_END_TYPE = int.from_bytes(b'\x06')
+SYN_TYPE = 1
+SYN_OK_TYPE = 2
+END_TYPE = 3
+END_OK_TYPE = 4
+ACK_TYPE = 5
+DATA_TYPE = 6
+DATA_END_TYPE = 7
 
 class Message:
 	def __init__(self, type, seqNumber = 0, data = ""):
