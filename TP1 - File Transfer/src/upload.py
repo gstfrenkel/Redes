@@ -1,5 +1,5 @@
 import sys
-from lib.client_helper import *
+from lib.client.client_helper import *
 
 def main(args):
     try:

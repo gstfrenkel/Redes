@@ -17,7 +17,7 @@ class Client:
         while syn_tries < MAX_SYN_TRIES:
             try:
                 self.socket.sendto(Message.newSynMessage().encode(), (self.serverAddress, self.serverPort))
-                encondedMessage, serverSocket = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                encondedMessage, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decodedMessage = Message.decode(encondedMessage)
                 
                 break
@@ -41,17 +41,17 @@ class Client:
         while fin_tries < MAX_FIN_TRIES:
             try:
                 self.socket.sendto(Message.newFinMessage().encode(), (self.serverAddress, self.serverPort))
-                encondedMessage, serverAddress = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                decodedMessage = Message.decode(encondedMessage)
+                encodedMessage, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                decodedMessage = Message.decode(encodedMessage)
 
                 break
-            except:
-                print("Timeout waiting for server ACK response. Retrying...")
+            except Exception as e:
+                print(f"Timeout waiting for server ACK response. Retrying...")
                 fin_tries += 1
 
         if fin_tries == MAX_FIN_TRIES:
-            print("Maximum FIN tries reached")
-            raise KeyboardInterrupt
+            print("Maximun FIN tries reached")
+            return
 
         if decodedMessage.isFinAckMessage():
             self.socket.sendto(Message.newFinOkMessage().encode(), (self.serverAddress, self.serverPort))
@@ -61,5 +61,6 @@ class Client:
 
     def startUploading(self):
         return
-        #message = '1|1|\\|\\' # primer 1 de upload y segundo de ACK
-        #self.socket.sendto(Message(1, message).encode(), (self.serverAddress, self.serverPort)) # aca habria que mandar el upload pero con una flag de conectado
+        message = '1|1|\\|\\' # primer 1 de upload y segundo de ACK
+
+        self.socket.sendto(Message(1, message).encode(), (self.serverAddress, self.serverPort)) # aca habria que mandar el upload pero con una flag de conectado

@@ -1,4 +1,5 @@
 from lib.client import *
+from lib.client.client import Client
 
 def createClientAndUploadToServer(args):
     address =  args[args.index('-H') + 1]
