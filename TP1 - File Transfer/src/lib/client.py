@@ -1,5 +1,5 @@
 from socket import *
-from lib.messages import SYN_MESSAGE, SYN_ACK_MESSAGE, CONNECTED_MESSAGE, FIN_MESSAGE, FIN_ACK_MESSAGE, DISCONNECTED_MESSAGE
+from lib.messages import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
 
 class Client:

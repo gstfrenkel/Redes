@@ -1,6 +1,6 @@
 from socket import *
 from threading import * 
-from lib.messages import SYN_MESSAGE, SYN_ACK_MESSAGE, CONNECTED_MESSAGE, FIN_MESSAGE, FIN_ACK_MESSAGE, DISCONNECTED_MESSAGE
+from lib.messages import *
 from lib.constants import MAX_MESSAGE_SIZE
 
 class Server:
