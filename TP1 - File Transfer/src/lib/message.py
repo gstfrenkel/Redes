@@ -1,37 +1,36 @@
-SYN_MESSAGE = 'SYN'
-SYN_ACK_MESSAGE = 'SYN_ACK'
-SYN_OK_MESSAGE = 'SYN_OK'
-FIN_MESSAGE = 'FIN'
-FIN_ACK_MESSAGE = 'FIN_ACK'
-FIN_OK_MESSAGE = 'FIN_OK'
-DATA_ACK_MESSAGE = 'ACK'
+SYN_TYPE = int.from_bytes(b'\x01')
+SYN_OK_TYPE = int.from_bytes(b'\x02')
+END_TYPE = int.from_bytes(b'\x03')
+END_OK_TYPE = int.from_bytes(b'\x04')
+ACK_TYPE = int.from_bytes(b'\x05')
+DATA_TYPE = int.from_bytes(b'\x06')
+DATA_END_TYPE = int.from_bytes(b'\x06')
 
 class Message:
-	def __init__(self, seqNumber, data):
+	def __init__(self, type, seqNumber = 0, data = ""):
+		self.type = type
 		self.seqNum = seqNumber
 		self.data = data
 
 	def encode(self):
+		type_bytes = self.type.to_bytes(1, byteorder='big')
 		seq_num_bytes = self.seqNum.to_bytes(4, byteorder='big')
-		return seq_num_bytes + self.data.encode()
+		return type_bytes + seq_num_bytes + self.data.encode()
+	
+	def isAck(self):
+		return self.type == ACK_TYPE
 
-	def isSynMessage(self):
-		return self.data == SYN_MESSAGE
+	def isSyn(self):
+		return self.type == SYN_TYPE
 
-	def isSynAckMessage(self):
-		return self.data == SYN_ACK_MESSAGE
+	def isSynOk(self):
+		return self.type == SYN_OK_TYPE
 
-	def isSynOkMessage(self):
-		return self.data == SYN_OK_MESSAGE
+	def isEnd(self):
+		return self.type == END_TYPE
 
-	def isFinMessage(self):
-		return self.data == FIN_MESSAGE
-
-	def isFinAckMessage(self):
-		return self.data == FIN_ACK_MESSAGE
-
-	def isFinOkMessage(self):
-		return self.data == FIN_OK_MESSAGE
+	def isEndOk(self):
+		return self.type == END_OK_TYPE
 
 	def getMessageData(self):
 		return self.data
@@ -41,35 +40,27 @@ class Message:
 	 
 	@classmethod
 	def decode(cls, messageEncoded: bytes):
-		seqNum = int.from_bytes(messageEncoded[:4], byteorder='big')
-		data = messageEncoded[4:].decode()
-		return cls(seqNum, data)
+		type = messageEncoded[0]
+		seqNum = int.from_bytes(messageEncoded[1:5], byteorder='big')
+		data = messageEncoded[5:].decode()
+		return cls(type, seqNum, data)
 
 	@classmethod
-	def newSynMessage(cls):
-		return cls(0, SYN_MESSAGE)
+	def newAck(cls):
+		return cls(ACK_TYPE)
 
 	@classmethod
-	def newSynAckMessage(cls):
-		return cls(0, SYN_ACK_MESSAGE)
+	def newSyn(cls):
+		return cls(SYN_TYPE)
 
 	@classmethod
-	def newSynOkMessage(cls):
-		return cls(0, SYN_OK_MESSAGE)
+	def newSynOk(cls):
+		return cls(SYN_OK_TYPE)
 	
 	@classmethod
-	def newFinMessage(cls):
-		return cls(0, FIN_MESSAGE)
+	def newEnd(cls):
+		return cls(END_TYPE)
 
 	@classmethod
-	def newFinAckMessage(cls):
-		return cls(0, FIN_ACK_MESSAGE)
-
-	@classmethod
-	def newFinOkMessage(cls):
-		return cls(0, FIN_OK_MESSAGE)
-
-	@classmethod
-	def newDataAckMessage(cls):
-		return cls(0, DATA_ACK_MESSAGE)
-
+	def newEndOk(cls):
+		return cls(END_OK_TYPE)

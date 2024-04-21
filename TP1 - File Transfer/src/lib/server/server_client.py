@@ -23,10 +23,10 @@ class ServerClient:
         while not self.connection_ended:
             message = Message.decode(queue.get())
 
-            if message.isSynMessage():
+            if message.isSyn():
                 self.processSynMessage(address)
                 self.syn_received = True
-            elif message.isSynOkMessage():
+            elif message.isSynOk():
                 if not self.syn_received:
                     print("Unable to complete handshake until Syn is first received.")
                     continue
@@ -35,10 +35,10 @@ class ServerClient:
             elif not self.handshake_complete:
                 print(f"Unable to process message until {address} completes handshake.")
                 continue
-            elif message.isFinMessage():
+            elif message.isEnd():
                 self.processFinMessage(address)
                 self.fin_received = True
-            elif message.isFinOkMessage():
+            elif message.isEndOk():
                 if not self.fin_received:
                     print("Unable to complete handshake until Syn is first received.")
                     continue
@@ -53,7 +53,7 @@ class ServerClient:
         print(f'SYN message arrived from client {address}, sending ACK...')
 
         try:
-            self.socket.sendto(Message.newSynAckMessage().encode(), address)
+            self.socket.sendto(Message.newAck().encode(), address)
         except timeout:
             print("Timeout waiting for client SYN_OK. Disconnecting...")
 
@@ -65,7 +65,7 @@ class ServerClient:
     def processFinMessage(self, address):
         try:
             print(f'FIN message arrived from client {address}, sending ACK...')
-            self.socket.sendto(Message.newFinAckMessage().encode(), address)
+            self.socket.sendto(Message.newAck().encode(), address)
         except timeout:
             print("Timeout waiting for client FIN_OK")
 

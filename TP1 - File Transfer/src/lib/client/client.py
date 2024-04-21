@@ -16,7 +16,7 @@ class Client:
         syn_tries = 0
         while syn_tries < MAX_SYN_TRIES:
             try:
-                self.socket.sendto(Message.newSynMessage().encode(), (self.serverAddress, self.serverPort))
+                self.socket.sendto(Message.newSyn().encode(), (self.serverAddress, self.serverPort))
                 encondedMessage, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decodedMessage = Message.decode(encondedMessage)
                 
@@ -31,8 +31,8 @@ class Client:
             print("Maximum SYN tries reached")
             raise KeyboardInterrupt
 
-        if decodedMessage.isSynAckMessage():
-            self.socket.sendto(Message.newSynOkMessage().encode(), (self.serverAddress, self.serverPort))
+        if decodedMessage.isAck():
+            self.socket.sendto(Message.newSynOk().encode(), (self.serverAddress, self.serverPort))
             print("Connected to server")
             self.connected = True
 
@@ -40,7 +40,7 @@ class Client:
         fin_tries = 0
         while fin_tries < MAX_FIN_TRIES:
             try:
-                self.socket.sendto(Message.newFinMessage().encode(), (self.serverAddress, self.serverPort))
+                self.socket.sendto(Message.newEnd().encode(), (self.serverAddress, self.serverPort))
                 encodedMessage, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decodedMessage = Message.decode(encodedMessage)
 
@@ -53,8 +53,8 @@ class Client:
             print("Maximun FIN tries reached")
             return
 
-        if decodedMessage.isFinAckMessage():
-            self.socket.sendto(Message.newFinOkMessage().encode(), (self.serverAddress, self.serverPort))
+        if decodedMessage.isAck():
+            self.socket.sendto(Message.newEndOk().encode(), (self.serverAddress, self.serverPort))
             self.socket.close()
             self.connected = False
             print("Disconnected from server")
@@ -64,3 +64,4 @@ class Client:
         message = '1|1|\\|\\' # primer 1 de upload y segundo de ACK
 
         self.socket.sendto(Message(1, message).encode(), (self.serverAddress, self.serverPort)) # aca habria que mandar el upload pero con una flag de conectado
+        
