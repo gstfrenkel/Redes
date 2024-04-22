@@ -1,4 +1,5 @@
 from socket import *
+import os
 from lib.message import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
 
@@ -60,7 +61,44 @@ class Client:
             print("Disconnected from server.")
 
     def upload(self):
-        return
-        message = '1|1|\\|\\' # primer 1 de upload y segundo de ACK
+        file_path = '/Fiuba/leer/chivo_texto.txt'
+        try: 
+            file =  open(file_path, "r")
+            file_data = file.read()
+            file_size = os.path.getsize(file_path)
+        except Exception as e:
+            self.disconnect()
+            raise
+        seqNumForMessage = 0
+        send_data_try = 0
 
-        self.socket.sendto(Message(1, message).encode(), (self.srv_address, self.srv_port)) # aca habria que mandar el upload pero con una flag de conectado
+        print(file_size)
+        while send_data_try < 3 and file_size > 0:
+            data_length = len(file_data)
+
+            if file_size - data_length <= 0:
+                message = Message(6, seqNumForMessage, file_data)
+            else:
+                message = Message(7, seqNumForMessage, file_data)
+            self.socket.sendto(message.encode(), (self.srv_address, self.srv_port))
+
+            self.socket.settimeout(TIMEOUT)
+
+            try:
+                print('esperando respuesta')
+                encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                decoded_msg = Message.decode(encoded_msg)
+                print(decoded_msg.type)
+                if decoded_msg.type != 5:
+                    send_data_try += 1
+                    continue
+
+            except timeout:
+                send_data_try += 1
+                print("no llego el ACK")
+                continue
+            print(f"llego ACK del paquete {decoded_msg.seqNum}")
+            seqNumForMessage += 1
+            send_data_try = 0
+            file_size -= data_length
+        return

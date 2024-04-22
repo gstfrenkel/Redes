@@ -74,4 +74,9 @@ class ServerClient:
         print(f'FIN_OK message arrived from client {address}. Disconnection successfully')
 
     def process_data_msg(self, address, message):
-        print(f'Data message arrived: {message}')
+        print(f'Data message arrived: type {message.type} seqNumber {message.seqNum}')
+        file_path = '/Fiuba/escribir/nuevo.txt'
+        file = open(file_path, "wb")
+        file.write(message.data)
+        ack_response_message = Message(5, message.seqNum)
+        self.socket.sendto(ack_response_message.encode(), address)

@@ -40,6 +40,7 @@ class Message:
 	 
 	@classmethod
 	def decode(cls, messageEncoded: bytes):
+		# print(messageEncoded)
 		type = messageEncoded[0]
 		seqNum = int.from_bytes(messageEncoded[1:5], byteorder='big')
 		data = messageEncoded[5:].decode()
