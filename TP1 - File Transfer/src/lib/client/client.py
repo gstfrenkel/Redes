@@ -2,11 +2,13 @@ from socket import *
 import os
 from lib.message import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
-
+"/src/lib/hola.txt"
 class Client:
-    def __init__(self, srv_address, srv_port):
+    def __init__(self, srv_address, srv_port, src_path, file_name):
         self.srv_address = str(srv_address)
         self.srv_port = int(srv_port)
+        self.src_path = src_path
+        self.file_name = file_name
         self.connected = False
         self.socket = None
 
@@ -29,7 +31,7 @@ class Client:
         if syn_tries == MAX_SYN_TRIES:
             self.socket.close()
             self.socket = None
-            print("Maximun SYN tries reached.")
+            print("Maximum SYN tries reached.")
             raise KeyboardInterrupt
 
         if decoded_msg.is_ack():
@@ -51,7 +53,7 @@ class Client:
                 fin_tries += 1
 
         if fin_tries == MAX_FIN_TRIES:
-            print("Maximun FIN tries reached.")
+            print("Maximum FIN tries reached.")
             return
 
         if decoded_msg.is_ack():
@@ -61,44 +63,55 @@ class Client:
             print("Disconnected from server.")
 
     def upload(self):
-        file_path = '/Fiuba/leer/chivo_texto.txt'
-        try: 
-            file =  open(file_path, "r")
-            file_data = file.read()
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.src_path)
+
+        with open(file_path, "r") as file:
             file_size = os.path.getsize(file_path)
-        except Exception as e:
-            self.disconnect()
-            raise
-        seqNumForMessage = 0
-        send_data_try = 0
+            file_name = self.file_name
+            seq_num = 0
 
-        print(file_size)
-        while send_data_try < 3 and file_size > 0:
-            data_length = len(file_data)
+            for data in read_file_data(file, len(file_name)):
+                data_size = len(data)
+                tries = 0
 
-            if file_size - data_length <= 0:
-                message = Message(6, seqNumForMessage, file_data)
-            else:
-                message = Message(7, seqNumForMessage, file_data)
-            self.socket.sendto(message.encode(), (self.srv_address, self.srv_port))
+                while tries < 3:
+                    type = DATA_TYPE
+                    if file_name != "":
+                        type = PATH_TYPE
+                    self.socket.sendto(Message(type, seq_num, data, file_name).encode(), (self.srv_address, self.srv_port))
 
-            self.socket.settimeout(TIMEOUT)
+                    try:
+                        encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                        decoded_msg = Message.decode(encoded_msg)
+                        if not decoded_msg.is_ack():
+                            tries += 1
+                            continue
+                    except timeout:
+                        tries += 1
+                        print("Timeout waiting for server ACK response. Retrying...")
+                        continue
 
-            try:
-                print('esperando respuesta')
-                encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                decoded_msg = Message.decode(encoded_msg)
-                print(decoded_msg.type)
-                if decoded_msg.type != 5:
-                    send_data_try += 1
-                    continue
+                    file_name = ""
+                    break
 
-            except timeout:
-                send_data_try += 1
-                print("no llego el ACK")
-                continue
-            print(f"llego ACK del paquete {decoded_msg.seqNum}")
-            seqNumForMessage += 1
-            send_data_try = 0
-            file_size -= data_length
-        return
+                if tries >= 3:
+                    print(f"Failed to upload file.")
+                    return
+                
+                if file_size - data_size <= 0:
+                    print("File upload completed successfully.")
+
+                seq_num += 1
+                file_size -= data_size
+
+
+def read_file_data(file, path_size):
+    if path_size > MAX_MESSAGE_SIZE - 5:
+        print(f"Destination file path length exceeds maximum value of: {MAX_MESSAGE_SIZE-5}")
+        raise
+
+    while True:
+        data = file.read(MAX_MESSAGE_SIZE - path_size - 5)
+        if not data:
+            break
+        yield data
