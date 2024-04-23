@@ -1,11 +1,12 @@
 from lib.client import *
+from lib.client.client import Client
 
 def createClientAndUploadToServer(args):
     address =  args[args.index('-H') + 1]
     port = args[args.index('-p') + 1]
     client = Client(address, port)
     client.connect()
-    client.startUploading()
+    client.upload()
     client.disconnect()
     return 0
 

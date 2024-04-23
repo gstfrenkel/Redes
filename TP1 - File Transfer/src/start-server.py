@@ -1,13 +1,13 @@
 import sys
-from lib.server_helper import *
+from lib.server.server import *
 
 def main(args):
     try:
         useFullArgs = args[1:]
         if '-h' in useFullArgs:
-            showServerUsage()
+            help()
         else:
-            createServerAndListenStartConnection(useFullArgs)
+            Server(useFullArgs)
                 
     except KeyboardInterrupt as e:
         print(e)
