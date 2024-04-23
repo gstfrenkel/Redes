@@ -78,6 +78,7 @@ class Client:
                     type = DATA_TYPE
                     if file_name != "":
                         type = PATH_TYPE
+                    print(len(Message(type, seq_num, data, file_name).encode()))
                     self.socket.sendto(Message(type, seq_num, data, file_name).encode(), (self.srv_address, self.srv_port))
 
                     try:
@@ -111,7 +112,11 @@ def read_file_data(file, path_size):
         raise
 
     while True:
-        data = file.read(MAX_MESSAGE_SIZE - path_size - 5)
+        if path_size == 0:
+            data = file.read(MAX_MESSAGE_SIZE - 5)
+        else:
+            data = file.read(MAX_MESSAGE_SIZE - 2 - path_size - 5)
+            
         if not data:
             break
         yield data
