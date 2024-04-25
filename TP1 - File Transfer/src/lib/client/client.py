@@ -2,7 +2,7 @@ from socket import *
 import os
 from lib.message import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE, MAX_UPLOAD_TRIES
-"/src/lib/hola.txt"
+
 class Client:
     def __init__(self, srv_address, srv_port, src_path, file_name):
         self.srv_address = str(srv_address)
@@ -78,7 +78,6 @@ class Client:
                     type = DATA_TYPE
                     if file_name != "":
                         type = PATH_TYPE
-                    print(len(Message(type, seq_num, data, file_name).encode()))
                     self.socket.sendto(Message(type, seq_num, data, file_name).encode(), (self.srv_address, self.srv_port))
 
                     try:
