@@ -78,7 +78,6 @@ class Client:
                     type = DATA_TYPE
                     if file_name != "":
                         type = PATH_TYPE
-                    print(len(Message(type, seq_num, data, file_name).encode()))
                     self.socket.sendto(Message(type, seq_num, data, file_name).encode(), (self.srv_address, self.srv_port))
 
                     try:
