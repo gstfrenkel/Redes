@@ -4,23 +4,29 @@ END_TYPE = 3
 END_OK_TYPE = 4
 ACK_TYPE = 5
 DATA_TYPE = 6
-PATH_TYPE = 7
+UPLOAD_TYPE = 7
+DOWNLOAD_TYPE = 8
 
 class Message:
-	def __init__(self, type, seq_num = 0, data = "", file_name = ""):
+	def __init__(self, type, seq_num = 0, data = "", file_name = "", file_size_left = 0):
 		self.type = type
 		self.seq_num = seq_num
 		self.path_size = len(file_name)
 		self.file_name = file_name
+		self.file_size_left = file_size_left
 		self.data = data
 
 	def encode(self):
 		type_bytes = self.type.to_bytes(1, byteorder='big')
 		seq_num_bytes = self.seq_num.to_bytes(4, byteorder='big')
 
-		if self.is_path_type():
+		if self.is_upload_type():
 			path_len_bytes = self.path_size.to_bytes(2, byteorder='big')
 			return type_bytes + seq_num_bytes + path_len_bytes + self.file_name.encode() + self.data.encode()
+		
+		elif self.is_download_type():
+			file_size_bytes = self.path_size.to_bytes(32, byteorder='big')
+			return type_bytes + seq_num_bytes + file_size_bytes + self.data.encode()
 		
 		return type_bytes + seq_num_bytes + self.data.encode()
 	
@@ -39,8 +45,11 @@ class Message:
 	def is_end_ok(self):
 		return self.type == END_OK_TYPE
 	
-	def is_path_type(self):
-		return self.type == PATH_TYPE
+	def is_upload_type(self):
+		return self.type == UPLOAD_TYPE
+
+	def is_download_type(self):
+		return self.type == DOWNLOAD_TYPE
 
 	def get_data(self):
 		return self.data
@@ -53,14 +62,19 @@ class Message:
 		type = messageEncoded[0]
 		seqNum = int.from_bytes(messageEncoded[1:5], byteorder='big')
 
-		if type != PATH_TYPE:
-			data = messageEncoded[5:].decode()
-			return cls(type, seqNum, data)
+		if type == UPLOAD_TYPE:
+			path_size = int.from_bytes(messageEncoded[5:7], byteorder='big')
+			path = messageEncoded[7:path_size+7].decode()
+			data = messageEncoded[path_size+7:].decode()
+			return cls(type, seqNum, data, path)
+			
+		elif type == DOWNLOAD_TYPE:
+			file_size = int.from_bytes(messageEncoded[5:37], byteorder='big')
+			data = messageEncoded[37:].decode()
+			return cls(type, seqNum, data, "", file_size)
 
-		path_size = int.from_bytes(messageEncoded[5:7], byteorder='big')
-		path = messageEncoded[7:path_size+7].decode()
-		data = messageEncoded[path_size+7:].decode()
-		return cls(type, seqNum, data, path)
+		data = messageEncoded[5:].decode()
+		return cls(type, seqNum, data)
 
 	@classmethod
 	def new_ack(cls):

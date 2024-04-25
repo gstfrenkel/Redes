@@ -77,8 +77,7 @@ class Client:
                 while tries < 3:
                     type = DATA_TYPE
                     if file_name != "":
-                        type = PATH_TYPE
-                    print(len(Message(type, seq_num, data, file_name).encode()))
+                        type = UPLOAD_TYPE
                     self.socket.sendto(Message(type, seq_num, data, file_name).encode(), (self.srv_address, self.srv_port))
 
                     try:
@@ -104,6 +103,53 @@ class Client:
 
                 seq_num += 1
                 file_size -= data_size
+
+    def download(self):
+        tries = 0
+        while tries < 3:
+            self.socket.sendto(Message(DOWNLOAD_TYPE, 0, "", self.file_name).encode(), (self.srv_address, self.srv_port))
+            encoded_messge, _ = self.socket.receive()
+
+            try:
+                encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                decoded_msg = Message.decode(encoded_msg)
+                if not decoded_msg.is_ack():
+                    tries += 1
+                    continue
+            except timeout:
+                tries += 1
+                print("Timeout waiting for server ACK response. Retrying...")
+                continue
+        
+        if tries == 3:
+            print("Connection error: ACK or first DOWNLOAD not received")
+            return
+
+        file = open(self.file_name, "wb+")
+
+        # Recibir del server el archivo e ir recibiendo
+        while True:
+            encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+            decoded_msg = Message.decode(encoded_msg)
+            if decoded_msg.is_download_type():
+                file.write(message.data.encode())
+                self.socket.sendto(Message.new_ack())
+            else:
+                break
+
+        
+        file.close()
+
+        """ decoded_msg = Message.decode(encoded_messge)
+        if decoded_msg.flags == ERROR.encoded:
+            logging.error(decoded_msg.data)
+            sys.exit(1)
+
+        file_name = get_file_name(DOWNLOADS_DIR, args.dst)
+        client.protocol.receive_file(first_encoded_msg=encoded_messge,
+                                    file_path=file_name,
+                                    server_address=client.server_address)
+        logging.info("Download finished") """
 
 
 def read_file_data(file, path_size):

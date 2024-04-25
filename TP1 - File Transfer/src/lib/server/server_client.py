@@ -77,8 +77,62 @@ class ServerClient:
     def process_data_msg(self, address, message):
         print(f'Data message arrived: type {message.type} seqNumber {message.seq_num}')
 
-        if not self.file:
+        # Deberiamos mandar la longitud del file y esperar que lleguen todos los bytes para escribir? 
+
+        if message.is_upload_type():
             self.file = open(message.file_name, "wb+")
+            self.file.write(message.data.encode())
+            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+        
+        elif message.is_download_type():
+            self.file = open(message.file_name, "rb")
+            for data in read_file_data(file, 0):
+                data_size = len(data)
+                tries = 0
+
+                while tries < 3:
+                    self.socket.sendto(Message(DATA_TYPE, message.seq_num, data).encode(), address)
+
+                    try:
+                        encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                        decoded_msg = Message.decode(encoded_msg)
+                        if not decoded_msg.is_ack():
+                            tries += 1
+                            continue
+                    except timeout:
+                        tries += 1
+                        print("Timeout waiting for server ACK response. Retrying...")
+                        continue
+
+                    file_name = ""
+                    break
+
+                if tries >= 3:
+                    print(f"Failed to upload file.")
+                    return
+                
+                if file_size - data_size <= 0:
+                    print("File upload completed successfully.")
+
+                seq_num += 1
+                file_size -= data_size
+
+        else:
+            self.file.write(message.data.encode())
+            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+
+
+def read_file_data(file, path_size):
+    if path_size > MAX_MESSAGE_SIZE - 5:
+        print(f"Destination file path length exceeds maximum value of: {MAX_MESSAGE_SIZE-5}")
+        raise
+
+    while True:
+        if path_size == 0:
+            data = file.read(MAX_MESSAGE_SIZE - 5)
+        else:
+            data = file.read(MAX_MESSAGE_SIZE - 2 - path_size - 5)
             
-        self.file.write(message.data.encode())
-        self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+        if not data:
+            break
+        yield data
