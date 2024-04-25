@@ -1,7 +1,7 @@
 from socket import * 
 from lib.message import * 
 from lib.constants import TIMEOUT
-
+from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
 class ServerClient:
     def __init__(self):
         cli_socket = socket(AF_INET, SOCK_DGRAM)
@@ -14,6 +14,7 @@ class ServerClient:
         self.socket = cli_socket
         self.file = None
         self.last_seq_num = 0
+        self.is_client_downloading = False
 
     def start(self):
         srv_socket = socket(AF_INET, SOCK_DGRAM)
@@ -46,6 +47,11 @@ class ServerClient:
                     continue
                 self.process_end_ok_msg(address)
                 self.connection_ended = True
+            elif message.is_download_type():
+                self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+                self.file = open(message.file_name, "r")
+                self.is_client_downloading = True
+                self.send_file_to_client()
             else:
                 self.process_data_msg(address, message)
 
@@ -80,46 +86,61 @@ class ServerClient:
         # Deberiamos mandar la longitud del file y esperar que lleguen todos los bytes para escribir? 
 
         if message.is_upload_type():
-            self.file = open(message.file_name, "wb+")
-            self.file.write(message.data.encode())
-            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+            self.save_file(message, address)
         
-        elif message.is_download_type():
-            self.file = open(message.file_name, "rb")
-            for data in read_file_data(file, 0):
-                data_size = len(data)
-                tries = 0
+        # elif message.is_ack and self.is_client_downloading:
+        #     seq_num_to_transfer = message.seq_num + 1
 
-                while tries < 3:
-                    self.socket.sendto(Message(DATA_TYPE, message.seq_num, data).encode(), address)
+        #     for data in read_file_data(self.file, 0):
+        #         data_size = len(data)
+        #         tries = 0
+        #         print(data)
+        #         while tries < 3:
+        #             self.socket.sendto(Message(DATA_TYPE, seq_num_to_transfer, data).encode(), address)
 
-                    try:
-                        encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                        decoded_msg = Message.decode(encoded_msg)
-                        if not decoded_msg.is_ack():
-                            tries += 1
-                            continue
-                    except timeout:
-                        tries += 1
-                        print("Timeout waiting for server ACK response. Retrying...")
-                        continue
+        #             try:
+        #                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+        #                 decoded_msg = Message.decode(encoded_msg)
+        #                 if not decoded_msg.is_ack():
+        #                     tries += 1
+        #                     continue
+        #             except timeout:
+        #                 tries += 1
+        #                 print("Timeout waiting for server ACK response. Retrying...")
+        #                 continue
 
-                    file_name = ""
-                    break
+        #             file_name = ""
+        #             break
 
-                if tries >= 3:
-                    print(f"Failed to upload file.")
-                    return
-                
-                if file_size - data_size <= 0:
-                    print("File upload completed successfully.")
-
-                seq_num += 1
-                file_size -= data_size
-
+        #         if tries >= 3:
+        #             print(f"Failed to upload file.")
+        #             return
         else:
             self.file.write(message.data.encode())
             self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+
+    def save_file(self, message, address):
+        self.file = open(message.file_name, "wb+")
+        self.file.write(message.data.encode())
+        self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+        while True:
+            try:
+                print('esperando sigueinte paquete')
+                encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                print('el siguiente mensaje llego por aca')
+                decoded_msg = Message.decode(encoded_msg)
+                if (decoded_msg.is_data_type()):
+                    self.file.write(decoded_msg.data.encode())
+                    self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), address)
+            except:
+                break # esto hay que cambiarlo
+        
+        return
+
+    def send_file_to_client():
+        # implementar while para que descargue todo aca
+        return
+
 
 
 def read_file_data(file, path_size):

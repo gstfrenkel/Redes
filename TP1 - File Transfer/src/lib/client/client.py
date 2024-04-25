@@ -11,6 +11,7 @@ class Client:
         self.file_name = file_name
         self.connected = False
         self.socket = None
+        self.transfer_address = None
 
     def connect(self):
         self.socket = socket(AF_INET, SOCK_DGRAM)
@@ -20,8 +21,12 @@ class Client:
         while syn_tries < MAX_SYN_TRIES:
             try:
                 self.socket.sendto(Message.new_syn().encode(), (self.srv_address, self.srv_port))
-                encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                encoded_msg, transfer_address = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decoded_msg = Message.decode(encoded_msg)
+                self.transfer_address = transfer_address
+
+                print('ttttt',(self.srv_address, self.srv_port))
+                print('tt',transfer_address)
                 
                 break
             except timeout:
@@ -76,9 +81,11 @@ class Client:
 
                 while tries < 3:
                     type = DATA_TYPE
+                    address = self.transfer_address
                     if file_name != "":
                         type = UPLOAD_TYPE
-                    self.socket.sendto(Message(type, seq_num, data, file_name).encode(), (self.srv_address, self.srv_port))
+                        address = (self.srv_address, self.srv_port)
+                    self.socket.sendto(Message(type, seq_num, data, file_name).encode(), address)
 
                     try:
                         encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
@@ -107,8 +114,9 @@ class Client:
     def download(self):
         tries = 0
         while tries < 3:
+            # print(self.file_name)
             self.socket.sendto(Message(DOWNLOAD_TYPE, 0, "", self.file_name).encode(), (self.srv_address, self.srv_port))
-            encoded_messge, _ = self.socket.receive()
+            # encoded_messge, _ = self.socket.receive()
 
             try:
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
@@ -132,8 +140,8 @@ class Client:
             encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             decoded_msg = Message.decode(encoded_msg)
             if decoded_msg.is_download_type():
-                file.write(message.data.encode())
-                self.socket.sendto(Message.new_ack())
+                file.write(decoded_msg.data.encode())
+                self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), (self.srv_address, self.srv_port))
             else:
                 break
 
