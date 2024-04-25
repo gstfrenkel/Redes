@@ -2,7 +2,7 @@ from socket import *
 import os
 from lib.message import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
-"/src/lib/hola.txt"
+
 class Client:
     def __init__(self, srv_address, srv_port, src_path, file_name):
         self.srv_address = str(srv_address)
