@@ -22,7 +22,6 @@ class Client:
                 self.socket.sendto(Message.new_syn().encode(), (self.srv_address, self.srv_port))
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decoded_msg = Message.decode(encoded_msg)
-                
                 break
             except timeout:
                 print("Timeout waiting for server ACK response. Retrying...")
@@ -97,7 +96,7 @@ class Client:
                 if tries >= MAX_UPLOAD_TRIES:
                     print(f"Failed to upload file.")
                     return
-                
+
                 if file_size - data_size <= 0:
                     print("File upload completed successfully.")
 
@@ -115,8 +114,9 @@ def read_file_data(file, path_size):
         if path_size == 0:
             data = file.read(max_path_size)
         else:
-            data = file.read(max_path_size - path_size - 2) # 2 is the sizeof(len(source_path))
-            
+            # 2 is the sizeof(len(source_path))
+            data = file.read(max_path_size - path_size - 2)
+
         if not data:
             break
         yield data
