@@ -2,7 +2,7 @@ from socket import *
 import os
 from lib.message import *
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
-"/src/lib/hola.txt"
+
 class Client:
     def __init__(self, srv_address, srv_port, src_path, file_name):
         self.srv_address = str(srv_address)
@@ -25,9 +25,6 @@ class Client:
                 decoded_msg = Message.decode(encoded_msg)
                 self.transfer_address = transfer_address
 
-                print('ttttt',(self.srv_address, self.srv_port))
-                print('tt',transfer_address)
-                
                 break
             except timeout:
                 print("Timeout waiting for server ACK response. Retrying...")
@@ -85,7 +82,7 @@ class Client:
                     if file_name != "":
                         type = UPLOAD_TYPE
                         address = (self.srv_address, self.srv_port)
-                    self.socket.sendto(Message(type, seq_num, data, file_name).encode(), address)
+                    self.socket.sendto(Message(type, seq_num, data, file_name, file_size).encode(), address)
 
                     try:
                         encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
@@ -114,9 +111,7 @@ class Client:
     def download(self):
         tries = 0
         while tries < 3:
-            # print(self.file_name)
             self.socket.sendto(Message(DOWNLOAD_TYPE, 0, "", self.file_name).encode(), (self.srv_address, self.srv_port))
-            # encoded_messge, _ = self.socket.receive()
 
             try:
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
@@ -145,20 +140,7 @@ class Client:
             else:
                 break
 
-        
         file.close()
-
-        """ decoded_msg = Message.decode(encoded_messge)
-        if decoded_msg.flags == ERROR.encoded:
-            logging.error(decoded_msg.data)
-            sys.exit(1)
-
-        file_name = get_file_name(DOWNLOADS_DIR, args.dst)
-        client.protocol.receive_file(first_encoded_msg=encoded_messge,
-                                    file_path=file_name,
-                                    server_address=client.server_address)
-        logging.info("Download finished") """
-
 
 def read_file_data(file, path_size):
     if path_size > MAX_MESSAGE_SIZE - 5:
@@ -169,7 +151,7 @@ def read_file_data(file, path_size):
         if path_size == 0:
             data = file.read(MAX_MESSAGE_SIZE - 5)
         else:
-            data = file.read(MAX_MESSAGE_SIZE - 2 - path_size - 5)
+            data = file.read(MAX_MESSAGE_SIZE - 2 - 32 - path_size - 5)
             
         if not data:
             break

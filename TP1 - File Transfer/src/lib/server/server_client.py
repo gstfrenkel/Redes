@@ -2,6 +2,8 @@ from socket import *
 from lib.message import * 
 from lib.constants import TIMEOUT
 from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
+import os
+
 class ServerClient:
     def __init__(self):
         cli_socket = socket(AF_INET, SOCK_DGRAM)
@@ -47,13 +49,13 @@ class ServerClient:
                     continue
                 self.process_end_ok_msg(address)
                 self.connection_ended = True
+            elif message.is_upload_type():
+                self.save_file(message, address)
             elif message.is_download_type():
-                self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
-                self.file = open(message.file_name, "r")
-                self.is_client_downloading = True
-                self.send_file_to_client()
+                self.send_file_to_client(message, address)
             else:
-                self.process_data_msg(address, message)
+                # NO SE ESTA USANDO ESTA FUNCION
+                # self.process_data_msg(address, message)
 
         self.socket.close()
         if self.file:
@@ -82,64 +84,72 @@ class ServerClient:
 
     def process_data_msg(self, address, message):
         print(f'Data message arrived: type {message.type} seqNumber {message.seq_num}')
-
-        # Deberiamos mandar la longitud del file y esperar que lleguen todos los bytes para escribir? 
-
-        if message.is_upload_type():
-            self.save_file(message, address)
-        
-        # elif message.is_ack and self.is_client_downloading:
-        #     seq_num_to_transfer = message.seq_num + 1
-
-        #     for data in read_file_data(self.file, 0):
-        #         data_size = len(data)
-        #         tries = 0
-        #         print(data)
-        #         while tries < 3:
-        #             self.socket.sendto(Message(DATA_TYPE, seq_num_to_transfer, data).encode(), address)
-
-        #             try:
-        #                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-        #                 decoded_msg = Message.decode(encoded_msg)
-        #                 if not decoded_msg.is_ack():
-        #                     tries += 1
-        #                     continue
-        #             except timeout:
-        #                 tries += 1
-        #                 print("Timeout waiting for server ACK response. Retrying...")
-        #                 continue
-
-        #             file_name = ""
-        #             break
-
-        #         if tries >= 3:
-        #             print(f"Failed to upload file.")
-        #             return
-        else:
-            self.file.write(message.data.encode())
-            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
-
-    def save_file(self, message, address):
-        self.file = open(message.file_name, "wb+")
+ 
         self.file.write(message.data.encode())
         self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
-        while True:
+
+    def save_file(self, message, address):
+        file_size = message.file_size
+        self.file = open(message.file_name, "wb+")
+        self.file.write(message.data.encode())
+        file_size -= len(message.data)
+        self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
+        while file_size > 0:
             try:
-                print('esperando sigueinte paquete')
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                print('el siguiente mensaje llego por aca')
                 decoded_msg = Message.decode(encoded_msg)
                 if (decoded_msg.is_data_type()):
                     self.file.write(decoded_msg.data.encode())
+                    file_size -= len(decoded_msg.data)
                     self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), address)
+
             except:
                 break # esto hay que cambiarlo
         
         return
 
-    def send_file_to_client():
-        # implementar while para que descargue todo aca
-        return
+    def send_file_to_client(message, address):
+        file_size = os.path.getsize(file_path)
+        file_name = message.file_name
+
+        with open(message.file_name, "r") as file:
+            seq_num = 0
+
+            for data in read_file_data(file, len(file_name)):
+                data_size = len(data)
+                tries = 0
+
+                while tries < 3:
+                    type = DATA_TYPE
+                    if file_name != "": 
+                        # deberia ser un tipo distinto para no tener que pasarle el nombre
+                        # del archivo que el cliente ya lo sabe, solo le quiero pasar el tamaño
+                        type = DOWNLOAD_TYPE
+                    self.socket.sendto(Message(type, seq_num, data, file_name, file_size).encode(), address)
+
+                    try:
+                        encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                        decoded_msg = Message.decode(encoded_msg)
+                        if not decoded_msg.is_ack():
+                            tries += 1
+                            continue
+                    except timeout:
+                        tries += 1
+                        print("Timeout waiting for server ACK response. Retrying...")
+                        continue
+
+                    file_name = ""
+                    break
+
+                if tries >= 3:
+                    print(f"Failed to upload file.")
+                    return
+                
+                if file_size - data_size <= 0:
+                    print("File download completed successfully.")
+
+                seq_num += 1
+                file_size -= data_size
 
 
 
@@ -152,7 +162,7 @@ def read_file_data(file, path_size):
         if path_size == 0:
             data = file.read(MAX_MESSAGE_SIZE - 5)
         else:
-            data = file.read(MAX_MESSAGE_SIZE - 2 - path_size - 5)
+            data = file.read(MAX_MESSAGE_SIZE - 2 - 32 - path_size - 5)
             
         if not data:
             break
