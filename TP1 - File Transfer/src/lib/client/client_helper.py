@@ -36,5 +36,5 @@ def showUploadUsage():
     print('\t-q,--quiet\tdecrease output verbosity')
     print('\t-H,--host\tserver IP address')
     print('\t-p,--port\tserver port')
-    print('\t-d,--dst\tsource file path')
+    print('\t-s,--src\tsource file path')
     print('\t-n,--name\tfile name\n')
