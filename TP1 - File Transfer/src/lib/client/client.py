@@ -1,7 +1,7 @@
 from socket import *
 import os
 from lib.message import *
-from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
+from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE, MAX_UPLOAD_TRIES
 
 class Client:
     def __init__(self, srv_address, srv_port, src_path, file_name):
@@ -24,7 +24,6 @@ class Client:
                 encoded_msg, transfer_address = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decoded_msg = Message.decode(encoded_msg)
                 self.transfer_address = transfer_address
-
                 break
             except timeout:
                 print("Timeout waiting for server ACK response. Retrying...")
@@ -76,7 +75,7 @@ class Client:
                 data_size = len(data)
                 tries = 0
 
-                while tries < 3:
+                while tries < MAX_UPLOAD_TRIES:
                     type = DATA_TYPE
                     address = self.transfer_address
                     if file_name != "":
@@ -98,10 +97,10 @@ class Client:
                     file_name = ""
                     break
 
-                if tries >= 3:
+                if tries >= MAX_UPLOAD_TRIES:
                     print(f"Failed to upload file.")
                     return
-                
+
                 if file_size - data_size <= 0:
                     print("File upload completed successfully.")
 
@@ -143,16 +142,18 @@ class Client:
         file.close()
 
 def read_file_data(file, path_size):
-    if path_size > MAX_MESSAGE_SIZE - 5:
-        print(f"Destination file path length exceeds maximum value of: {MAX_MESSAGE_SIZE-5}")
+    max_path_size = MAX_MESSAGE_SIZE - 5
+    if path_size > max_path_size:
+        print(f"Destination file path length exceeds maximum value of: {max_path_size}")
         raise
 
     while True:
         if path_size == 0:
-            data = file.read(MAX_MESSAGE_SIZE - 5)
+            data = file.read(max_path_size)
         else:
-            data = file.read(MAX_MESSAGE_SIZE - 2 - 32 - path_size - 5)
-            
+            # 2 is the sizeof(len(source_path)) and 32 is the sizeof(file_size)
+            data = file.read(max_path_size - path_size - 2 - 32)
+
         if not data:
             break
         yield data
