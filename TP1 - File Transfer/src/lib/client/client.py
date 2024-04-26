@@ -139,6 +139,7 @@ class Client:
             decoded_msg = Message.decode(encoded_msg)
             if decoded_msg.is_data_type():
                 file.write(decoded_msg.data.encode())
+                file_size -= len(decoded_msg.data)
                 self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), self.transfer_address)
             else:
                 break

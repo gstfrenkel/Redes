@@ -147,10 +147,6 @@ class ServerClient:
 
                 seq_num += 1
                 file_size -= data_size
-    
-        # Aca no esta matando el thread
-        self.socket.close()
-
 
 def read_file_data(file, path_size):
     max_path_size = MAX_MESSAGE_SIZE - 5
