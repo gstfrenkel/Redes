@@ -54,7 +54,7 @@ class ServerClient:
             elif message.is_download_type():
                 self.send_file_to_client(message, address)
             else:
-                print('hola')
+                print('ENTRO', message.type)
                 # NO SE ESTA USANDO ESTA FUNCION
                 # self.process_data_msg(address, message)
 
@@ -107,8 +107,8 @@ class ServerClient:
             except:
                 break # esto hay que cambiarlo
 
-    def send_file_to_client(message, address):
-        file_size = os.path.getsize(file_path)
+    def send_file_to_client(self, message, address):
+        file_size = os.path.getsize(message.file_name)
         file_name = message.file_name
 
         with open(message.file_name, "r") as file:
@@ -120,9 +120,7 @@ class ServerClient:
 
                 while tries < 3:
                     type = DATA_TYPE
-                    if file_name != "": 
-                        # deberia ser un tipo distinto para no tener que pasarle el nombre
-                        # del archivo que el cliente ya lo sabe, solo le quiero pasar el tamaño
+                    if file_name != "":
                         type = DOWNLOAD_TYPE
                     self.socket.sendto(Message(type, seq_num, data, file_name, file_size).encode(), address)
 
@@ -149,7 +147,9 @@ class ServerClient:
 
                 seq_num += 1
                 file_size -= data_size
-
+    
+        # Aca no esta matando el thread
+        self.socket.close()
 
 
 def read_file_data(file, path_size):

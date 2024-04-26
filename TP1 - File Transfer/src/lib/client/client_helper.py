@@ -15,9 +15,9 @@ def createClientAndUploadToServer(args):
 def createClientAndDownloadFromServer(args):
     address =  args[args.index('-H') + 1]
     port = args[args.index('-p') + 1]
-    src_path = args[args.index('-d') + 1]
+    dest_path = args[args.index('-d') + 1]
     file_name = args[args.index('-n') + 1]
-    client = Client(address, port, '', file_name)
+    client = Client(address, port, dest_path, file_name)
     client.connect()
     client.download()
     client.disconnect()
