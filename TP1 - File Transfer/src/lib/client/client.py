@@ -1,7 +1,7 @@
 from socket import *
 import os
 from lib.message import *
-from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE, MAX_UPLOAD_TRIES
+from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE, MAX_UPLOAD_TRIES, MAX_DOWNLOAD_TRIES
 
 class Client:
     def __init__(self, srv_address, srv_port, src_path, file_name):
@@ -109,7 +109,7 @@ class Client:
 
     def download(self):
         tries = 0
-        while tries < 3:
+        while tries < MAX_DOWNLOAD_TRIES:
             self.socket.sendto(Message(DOWNLOAD_TYPE, 0, "", self.file_name).encode(), (self.srv_address, self.srv_port))
 
             try:
@@ -123,7 +123,7 @@ class Client:
                 print("Timeout waiting for server ACK response. Retrying...")
                 continue
         
-        if tries == 3:
+        if tries == MAX_DOWNLOAD_TRIES:
             print("Connection error: ACK or first DOWNLOAD not received")
             return
 

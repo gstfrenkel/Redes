@@ -54,6 +54,7 @@ class ServerClient:
             elif message.is_download_type():
                 self.send_file_to_client(message, address)
             else:
+                print('hola')
                 # NO SE ESTA USANDO ESTA FUNCION
                 # self.process_data_msg(address, message)
 
@@ -105,8 +106,6 @@ class ServerClient:
 
             except:
                 break # esto hay que cambiarlo
-        
-        return
 
     def send_file_to_client(message, address):
         file_size = os.path.getsize(file_path)
@@ -154,15 +153,16 @@ class ServerClient:
 
 
 def read_file_data(file, path_size):
-    if path_size > MAX_MESSAGE_SIZE - 5:
-        print(f"Destination file path length exceeds maximum value of: {MAX_MESSAGE_SIZE-5}")
+    max_path_size = MAX_MESSAGE_SIZE - 5
+    if path_size > max_path_size:
+        print(f"Destination file path length exceeds maximum value of: {max_path_size}")
         raise
 
     while True:
         if path_size == 0:
-            data = file.read(MAX_MESSAGE_SIZE - 5)
+            data = file.read(max_path_size)
         else:
-            data = file.read(MAX_MESSAGE_SIZE - 2 - 32 - path_size - 5)
+            data = file.read(max_path_size - 2 - 32 - path_size)
             
         if not data:
             break
