@@ -18,7 +18,7 @@ class ServerClient:
         self.last_seq_num = 0
         self.is_client_downloading = False
 
-    def handle_client_msg(self, address, queue):
+    def handle_client_msg(self, address, queue, server_storage_path):
         while not self.connection_ended:
             message = Message.decode(queue.get())
             print("llego un nuevo mensaje al general")
@@ -45,7 +45,7 @@ class ServerClient:
                 self.process_end_ok_msg(address)
                 self.connection_ended = True
             elif message.is_upload_type():
-                self.save_file(message, address)
+                self.save_file(message, address, server_storage_path)
             elif message.is_download_type():
                 self.send_file_to_client(message, address)
             else:
@@ -80,13 +80,14 @@ class ServerClient:
 
     def process_data_msg(self, address, message):
         print(f'Data message arrived: type {message.type} seqNumber {message.seq_num}')
- 
+
         self.file.write(message.data.encode())
         self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
 
-    def save_file(self, message, address):
+    def save_file(self, message, address, server_storage_path):
         file_size = message.file_size
-        self.file = open(message.file_name, "wb+")
+        new_file_path = self._create_path_file(server_storage_path, message.file_name)
+        self.file = open(new_file_path, "wb+")
         self.file.write(message.data.encode())
         file_size -= len(message.data)
         self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), address)
@@ -106,6 +107,10 @@ class ServerClient:
 
             except:
                 break # esto hay que cambiarlo
+
+    # Posible TODO: se podría manejar errores
+    def _create_path_file(self, server_storage_path, file_name):
+        return server_storage_path + file_name
 
     def send_file_to_client(self, message, address):
         file_size = os.path.getsize(message.file_name)
@@ -163,3 +168,4 @@ def read_file_data(file, path_size):
         if not data:
             break
         yield data
+

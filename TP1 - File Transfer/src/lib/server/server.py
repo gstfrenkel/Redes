@@ -4,17 +4,24 @@ from threading import *
 from lib.message import * 
 from lib.constants import MAX_MESSAGE_SIZE, TIMEOUT
 from lib.server.server_client import ServerClient
+from lib.server.exceptions import ServerParamsFailException
+
 
 class Server:
     def __init__(self, args):
-        address =  args[args.index('-H') + 1]
-        port = args[args.index('-p') + 1]
+        try:
+            address = args[args.index('-H') + 1]
+            port = args[args.index('-p') + 1]
+            storage_path = args[args.index('-s') + 1]
 
-        self.address = str(address)
-        self.port = int(port)
-        self.clients = {}
+            self.address = str(address)
+            self.storage_path = str(storage_path)
+            self.port = int(port)
+            self.clients = {}
 
-        self.start()
+            self.start()
+        except ValueError:
+            raise ServerParamsFailException
 
     def start(self):
         serverSocket = socket(AF_INET, SOCK_DGRAM)
@@ -30,16 +37,16 @@ class Server:
                 if address not in self.clients:
                     self.clients[address] = Queue()
 
-                    client = Thread(target=self.handle_client_msg, args=(address, self.clients[address]))
+                    client = Thread(target=self.handle_client_msg, args=(address, self.clients[address], self.storage_path))
                     client.start()
 
                 self.clients[address].put(message)
             except Exception as e:
                 print(f"Failed to receive message: {e}")
 
-    def handle_client_msg(self, address, queue):
+    def handle_client_msg(self, address, queue, storage_path):
         client = ServerClient()
-        client.handle_client_msg(address, queue)
+        client.handle_client_msg(address, queue, storage_path)
         del(self.clients[address])
 
 
