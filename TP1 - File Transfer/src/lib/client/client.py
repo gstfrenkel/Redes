@@ -78,9 +78,10 @@ class Client:
                 while tries < MAX_UPLOAD_TRIES:
                     type = DATA_TYPE
                     address = self.transfer_address
-                    if file_name != "":
+                    if seq_num == 0:
                         type = UPLOAD_TYPE
                         address = (self.srv_address, self.srv_port)
+                    print(f'mandando numero {seq_num} al address {address}')
                     self.socket.sendto(Message(type, seq_num, data, file_name, file_size).encode(), address)
 
                     try:
@@ -102,6 +103,16 @@ class Client:
                     return
 
                 if file_size - data_size <= 0:
+                    end_tries = 0
+                    while end_tries >= MAX_UPLOAD_TRIES:
+                        self.socket.sendto(Message(type, seq_num, data, file_name, file_size).encode(), address)
+                        try:
+                            encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                            decoded_msg = Message.decode(encoded_msg)
+                            if not decoded_msg.is_ack():
+                                tries += 1
+                                continue
+                        except timeout:
                     print("File upload completed successfully.")
 
                 seq_num += 1

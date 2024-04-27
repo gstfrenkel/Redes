@@ -7,7 +7,7 @@ import os
 class ServerClient:
     def __init__(self):
         cli_socket = socket(AF_INET, SOCK_DGRAM)
-        cli_socket.settimeout(TIMEOUT)
+        #cli_socket.settimeout(TIMEOUT)
 
         self.handshake_complete = False
         self.connection_ended = False
@@ -18,15 +18,10 @@ class ServerClient:
         self.last_seq_num = 0
         self.is_client_downloading = False
 
-    def start(self):
-        srv_socket = socket(AF_INET, SOCK_DGRAM)
-        srv_socket.bind((self.address, self.port))
-
-        self.listen(srv_socket)
-
     def handle_client_msg(self, address, queue):
         while not self.connection_ended:
             message = Message.decode(queue.get())
+            print("llego un nuevo mensaje al general")
 
             if message.is_syn():
                 self.process_syn_msg(address)
@@ -99,9 +94,14 @@ class ServerClient:
             try:
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decoded_msg = Message.decode(encoded_msg)
+                print("llego el mensaje", decoded_msg.seq_num)
                 if (decoded_msg.is_data_type()):
-                    self.file.write(decoded_msg.data.encode())
-                    file_size -= len(decoded_msg.data)
+                    if decoded_msg.seq_num > self.last_seq_num:
+                        self.last_seq_num = decoded_msg.seq_num
+                        self.file.write(decoded_msg.data.encode())
+                        file_size -= len(decoded_msg.data)
+                    else:
+                        print("llego repetido, solo mandamos el ack")
                     self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), address)
 
             except:
