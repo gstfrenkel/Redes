@@ -126,27 +126,32 @@ class Client:
             try:
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 decoded_msg = Message.decode(encoded_msg)
-                if not decoded_msg.is_ack():
+                if not decoded_msg.is_download_type():
                     tries += 1
                     continue
             except timeout:
                 tries += 1
                 print("Timeout waiting for server ACK response. Retrying...")
                 continue
+
+            break
         
         if tries == MAX_DOWNLOAD_TRIES:
             print("Connection error: ACK or first DOWNLOAD not received")
             return
 
-        file = open(self.file_name, "wb+")
-
-        # Recibir del server el archivo e ir recibiendo
-        while True:
+        file = open(self.src_path, "wb+")
+        file_size = decoded_msg.file_size
+        file.write(decoded_msg.data.encode())
+        file_size -= len(decoded_msg.data)
+        self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), self.transfer_address)
+        while file_size > 0:
             encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             decoded_msg = Message.decode(encoded_msg)
-            if decoded_msg.is_download_type():
+            if decoded_msg.is_data_type():
                 file.write(decoded_msg.data.encode())
-                self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), (self.srv_address, self.srv_port))
+                file_size -= len(decoded_msg.data)
+                self.socket.sendto(Message(ACK_TYPE, decoded_msg.seq_num).encode(), self.transfer_address)
             else:
                 break
 

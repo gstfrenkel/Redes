@@ -8,13 +8,19 @@ UPLOAD_TYPE = 7
 DOWNLOAD_TYPE = 8
 LAST_DATA_TYPE = 9
 
+
+#   1  |    4    |     32      |      2      |  path_size  |  lo demas
+# type | seq_num | file_size * | path_size * | file_name * |    data
+#
+# * opcional
+
 class Message:
 	def __init__(self, type, seq_num = 0, data = "", file_name = "", file_size = 0):
 		self.type = type
 		self.seq_num = seq_num
+		self.file_size = file_size
 		self.path_size = len(file_name)
 		self.file_name = file_name
-		self.file_size = file_size
 		self.data = data
 
 	def encode(self):
@@ -27,8 +33,9 @@ class Message:
 			return type_bytes + seq_num_bytes + file_size_bytes + path_len_bytes + self.file_name.encode() + self.data.encode()
 		
 		elif self.is_download_type():
+			file_size_bytes = self.file_size.to_bytes(32, byteorder='big')
 			path_len_bytes = self.path_size.to_bytes(2, byteorder='big')
-			return type_bytes + seq_num_bytes + path_len_bytes +  self.file_name.encode() + self.data.encode()
+			return type_bytes + seq_num_bytes + file_size_bytes + path_len_bytes + self.file_name.encode() + self.data.encode()
 		
 		return type_bytes + seq_num_bytes + self.data.encode()
 	
@@ -75,13 +82,11 @@ class Message:
 			return cls(type, seqNum, data, path, file_size)
 			
 		elif type == DOWNLOAD_TYPE:
-			# file_size = int.from_bytes(messageEncoded[5:37], byteorder='big')
-			# data = messageEncoded[37:].decode()
-			# return cls(type, seqNum, data, "", file_size)
-			path_size = int.from_bytes(messageEncoded[5:7], byteorder='big')
-			path = messageEncoded[7:path_size+7].decode()
-			data = messageEncoded[path_size+7:].decode()
-			return cls(type, seqNum, data, path)
+			file_size = int.from_bytes(messageEncoded[5:37], byteorder='big')
+			path_size = int.from_bytes(messageEncoded[37:39], byteorder='big')
+			path = messageEncoded[39:path_size+39].decode()
+			data = messageEncoded[path_size+39:].decode()
+			return cls(type, seqNum, data, path, file_size)
 
 		data = messageEncoded[5:].decode()
 		return cls(type, seqNum, data)
