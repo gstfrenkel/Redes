@@ -113,6 +113,7 @@ class Client:
                                 tries += 1
                                 continue
                         except timeout:
+                            print("timeout error")  # handlearlo mejor
                     print("File upload completed successfully.")
 
                 seq_num += 1

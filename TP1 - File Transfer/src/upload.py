@@ -8,7 +8,7 @@ def main(args):
             showUploadUsage()
         else:
             createClientAndUploadToServer(useFullArgs)
-                
+
     except Exception as e:
         print(e)
         print("\nExiting...")
