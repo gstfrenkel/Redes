@@ -64,10 +64,7 @@ class Client:
     def upload(self):
         file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.src_path)
 
-        print("Uplaoding")
-
         with open(file_path, "r") as file:
-            print("file open")
             file_size = os.path.getsize(file_path)
 
             for data in read_file_data(file):
