@@ -12,11 +12,11 @@ donde:
 ### Upload
 
 ```
-python3 upload.py -H 127.0.0.1 -p 3500 -s prueba.txt -n pruebaII.txt
+python3 upload.py -H 127.0.0.1 -p 3500 -s lib/client/prueba_a_subir.txt -n prueba_subida.txt
 ```
 
 donde:
--s: nombre del archivo de origen. (TODO: debería ser un path al archivo, ó un path absoluto)
+-s: nombre del archivo de origen.
 -n: nombre del archivo como se sube al servidor.
 
 ### Download

@@ -64,10 +64,10 @@ class Client:
             print("Disconnected from server.")
 
     def upload(self):
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.src_path)
+        file_to_upload = self.src_path
 
-        with open(file_path, "r") as file:
-            file_size = os.path.getsize(file_path)
+        with open(file_to_upload, "r") as file:
+            file_size = os.path.getsize(file_to_upload)
             file_name = self.file_name
             seq_num = 0
 
