@@ -2,7 +2,7 @@ from lib.client import *
 from lib.client.client import Client
 
 def createClientAndUploadToServer(args):
-    address =  args[args.index('-H') + 1]
+    address = args[args.index('-H') + 1]
     port = args[args.index('-p') + 1]
     src_path = args[args.index('-s') + 1]
     file_name = args[args.index('-n') + 1]

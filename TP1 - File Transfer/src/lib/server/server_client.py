@@ -47,7 +47,7 @@ class ServerClient:
             elif message.is_upload_type():
                 self.save_file(message, address, server_storage_path)
             elif message.is_download_type():
-                self.send_file_to_client(message, address)
+                self.send_file_to_client(message, address, server_storage_path)
             else:
                 print('ENTRO', message.type)
                 # NO SE ESTA USANDO ESTA FUNCION
@@ -112,11 +112,12 @@ class ServerClient:
     def _create_path_file(self, server_storage_path, file_name):
         return server_storage_path + file_name
 
-    def send_file_to_client(self, message, address):
-        file_size = os.path.getsize(message.file_name)
+    def send_file_to_client(self, message, address, server_storage_path):
         file_name = message.file_name
+        file_name = self._create_path_file(server_storage_path, file_name)
+        file_size = os.path.getsize(file_name)
 
-        with open(message.file_name, "r") as file:
+        with open(file_name, "r") as file:
             seq_num = 0
 
             for data in read_file_data(file, len(file_name)):
