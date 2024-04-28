@@ -1,58 +1,36 @@
-SYN_TYPE = 1
-SYN_OK_TYPE = 2
-END_TYPE = 3
-END_OK_TYPE = 4
+HEADER_SIZE = 5
+
+# Connection
+UPLOAD_TYPE = 1
+DOWNLOAD_TYPE = 2
+
+# Data exchange
+DATA_TYPE = 3
+LAST_DATA_TYPE = 4
+
+# Validation
 ACK_TYPE = 5
-DATA_TYPE = 6
-UPLOAD_TYPE = 7
-DOWNLOAD_TYPE = 8
-LAST_DATA_TYPE = 9
 
+# Disconnection
+END_TYPE = 6
 
-#   1  |    4    |     32      |      2      |  path_size  |  lo demas
-# type | seq_num | file_size * | path_size * | file_name * |    data
-#
-# * opcional
+# Message structure
+#   1  |    4    | ...
+# type | seq_num | data 
 
 class Message:
-	def __init__(self, type, seq_num = 0, data = "", file_name = "", file_size = 0):
+	def __init__(self, type, seq_num = 0, data = ""):
 		self.type = type
 		self.seq_num = seq_num
-		self.file_size = file_size
-		self.path_size = len(file_name)
-		self.file_name = file_name
 		self.data = data
 
 	def encode(self):
 		type_bytes = self.type.to_bytes(1, byteorder='big')
-		seq_num_bytes = self.seq_num.to_bytes(4, byteorder='big')
-
-		if self.is_upload_type():
-			file_size_bytes = self.file_size.to_bytes(32, byteorder='big')
-			path_len_bytes = self.path_size.to_bytes(2, byteorder='big')
-			return type_bytes + seq_num_bytes + file_size_bytes + path_len_bytes + self.file_name.encode() + self.data.encode()
-		
-		elif self.is_download_type():
-			file_size_bytes = self.file_size.to_bytes(32, byteorder='big')
-			path_len_bytes = self.path_size.to_bytes(2, byteorder='big')
-			return type_bytes + seq_num_bytes + file_size_bytes + path_len_bytes + self.file_name.encode() + self.data.encode()
-		
+		seq_num_bytes = self.seq_num.to_bytes(4, byteorder='big')		
 		return type_bytes + seq_num_bytes + self.data.encode()
 	
 	def is_ack(self):
 		return self.type == ACK_TYPE
-
-	def is_syn(self):
-		return self.type == SYN_TYPE
-
-	def is_syn_ok(self):
-		return self.type == SYN_OK_TYPE
-
-	def is_end(self):
-		return self.type == END_TYPE
-
-	def is_end_ok(self):
-		return self.type == END_OK_TYPE
 	
 	def is_upload_type(self):
 		return self.type == UPLOAD_TYPE
@@ -62,6 +40,9 @@ class Message:
 
 	def is_data_type(self):
 		return self.type == DATA_TYPE
+	
+	def is_disconnect(self):
+		return self.type == END_TYPE
 	
 	def get_data(self):
 		return self.data
@@ -73,40 +54,17 @@ class Message:
 	def decode(cls, messageEncoded: bytes):
 		type = messageEncoded[0]
 		seqNum = int.from_bytes(messageEncoded[1:5], byteorder='big')
-
-		if type == UPLOAD_TYPE:
-			file_size = int.from_bytes(messageEncoded[5:37], byteorder='big')
-			path_size = int.from_bytes(messageEncoded[37:39], byteorder='big')
-			path = messageEncoded[39:path_size+39].decode()
-			data = messageEncoded[path_size+39:].decode()
-			return cls(type, seqNum, data, path, file_size)
-			
-		elif type == DOWNLOAD_TYPE:
-			file_size = int.from_bytes(messageEncoded[5:37], byteorder='big')
-			path_size = int.from_bytes(messageEncoded[37:39], byteorder='big')
-			path = messageEncoded[39:path_size+39].decode()
-			data = messageEncoded[path_size+39:].decode()
-			return cls(type, seqNum, data, path, file_size)
-
 		data = messageEncoded[5:].decode()
 		return cls(type, seqNum, data)
 
 	@classmethod
-	def new_ack(cls):
-		return cls(ACK_TYPE)
-
-	@classmethod
-	def new_syn(cls):
-		return cls(SYN_TYPE)
-
-	@classmethod
-	def new_syn_ok(cls):
-		return cls(SYN_OK_TYPE)
+	def new_ack(cls, seq_num = 0):
+		return cls(ACK_TYPE, seq_num)
 	
 	@classmethod
-	def new_end(cls):
-		return cls(END_TYPE)
-
+	def new_connect(cls, message_type, name):
+		return cls(message_type, 0, name)	
+	
 	@classmethod
-	def new_end_ok(cls):
-		return cls(END_OK_TYPE)
+	def new_disconnect(cls):
+		return cls(END_TYPE, 0, "")	

@@ -1,61 +1,91 @@
 from socket import * 
 from lib.message import * 
-from lib.constants import TIMEOUT
-from lib.constants import TIMEOUT, MAX_SYN_TRIES, MAX_FIN_TRIES, MAX_MESSAGE_SIZE
+from lib.constants import TIMEOUT, MAX_MESSAGE_SIZE, MAX_TRIES
 import os
 
 class ServerClient:
-    def __init__(self):
+    def __init__(self, address):
         cli_socket = socket(AF_INET, SOCK_DGRAM)
-        #cli_socket.settimeout(TIMEOUT)
+        cli_socket.settimeout(TIMEOUT)
 
-        self.handshake_complete = False
-        self.connection_ended = False
-        self.syn_received = False
-        self.fin_received = False
         self.socket = cli_socket
+        self.address = address
         self.file = None
-        self.last_seq_num = 0
+        self.tries = 0
         self.is_client_downloading = False
+        self.last_seq_num = 0
 
-    def handle_client_msg(self, address, queue):
-        while not self.connection_ended:
-            message = Message.decode(queue.get())
-            print("llego un nuevo mensaje al general")
+    def start(self, message):
+        self.socket.sendto(Message.new_ack().encode(), self.address)
 
-            if message.is_syn():
-                self.process_syn_msg(address)
-                self.syn_received = True
-            elif message.is_syn_ok():
-                if not self.syn_received:
-                    print("Unable to complete handshake until Syn is first received.")
-                    continue
-                self.process_syn_ok_msg(address)
-                self.handshake_complete = True
-            elif not self.handshake_complete:
-                print(f"Unable to process message until {address} completes handshake.")
+
+        print(f"file name: {message.data}")
+        self.file = open(message.data, "wb+")
+
+        if message.is_upload_type():
+            self.upload()
+        elif message.is_download_type():
+            self.download()
+
+        self.disconnect()
+
+    def connect(self):
+        while self.tries < MAX_TRIES:
+            
+            try:
+                enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+                message = Message.decode(enc_msg)
+                self.tries = 0
+                print(f"Successfully established connection to {self.address[0]}:{self.address[1]}.")
+                return message, True
+            except timeout:
+                self.tries += 1
+        print(f"Failed to establish connection to {self.address[0]}:{self.address[1]}. Aborting.")
+        return None, False
+
+    def upload(self):
+        while True:
+            if self.tries == MAX_TRIES:
+                break
+
+            try:
+                enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+            except timeout:
+                self.tries += 1
+                self.socket.sendto(Message(ACK_TYPE, self.last_seq_num).encode(), self.address)
                 continue
-            elif message.is_end():
-                self.process_end_msg(address)
-                self.fin_received = True
-            elif message.is_end_ok():
-                if not self.fin_received:
-                    print("Unable to complete handshake until Syn is first received.")
-                    continue
-                self.process_end_ok_msg(address)
-                self.connection_ended = True
-            elif message.is_upload_type():
-                self.save_file(message, address)
-            elif message.is_download_type():
-                self.send_file_to_client(message, address)
-            else:
-                print('ENTRO', message.type)
-                # NO SE ESTA USANDO ESTA FUNCION
-                # self.process_data_msg(address, message)
 
-        self.socket.close()
+            message = Message.decode(enc_msg)
+
+            if message.is_disconnect():
+                self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
+                break
+
+            if message.seq_num == self.last_seq_num + 1:
+                self.tries = 0
+                self.file.write(message.data.encode())
+                self.last_seq_num = message.seq_num
+            else:
+                self.tries += 1
+                
+            self.socket.sendto(Message(ACK_TYPE, self.last_seq_num).encode(), self.address)
+
+
+    def download(self):
+        while True:
+            message, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
+
+
+
+
+    def disconnect(self):
         if self.file:
             self.file.close()
+        self.socket.close()
+        print(f"Successfully disconnected from {self.address[0]}:{self.address[1]}.")
+            
+
+    
 
     def process_syn_msg(self, address):
         print(f'Attempt to connect from {address}, sending Ack...')
