@@ -22,9 +22,9 @@ donde:
 ### Download
 
 ```
-python3 download.py -H 127.0.0.1 -p 3500 -d prueba.txt -n pruebaII.txt
+python3 download.py -H 127.0.0.1 -p 3500 -d lib/client/pruebaII_descargada.txt -n pruebaII_del_servidor.txt
 ```
 
 donde:
--d: nombre del archivo de destino. (TODO: debería ser un path relativo al archivo, ó un path absoluto)
+-d: path(incluyendo nombre) del destino del archivo.
 -n: nombre del archivo a descargar.
