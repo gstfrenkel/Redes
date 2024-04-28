@@ -81,16 +81,13 @@ class Client:
                         encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                         message = Message.decode(encoded_msg)
 
-                        if not message.is_ack():
+                        if not message.is_ack() and message.seq_num != self.seq_num:
                             self.tries += 1
                             continue
                         self.tries = 0
                     except timeout:
                         self.tries += 1
                         print("Timeout waiting for server ACK response. Retrying...")
-                        continue
-
-                    break
 
                 if self.tries >= MAX_TRIES:
                     print(f"Failed to upload file.")
