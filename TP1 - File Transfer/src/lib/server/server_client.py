@@ -47,6 +47,8 @@ class ServerClient:
                     type = LAST_DATA_TYPE
 
                 self.socket.sendto(Message(type, self.seq_num, data).encode(), self.address)
+                print(f"Sending {type} {self.seq_num}")
+                print(data)
 
                 try:
                     encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
@@ -89,59 +91,12 @@ class ServerClient:
             except timeout:
                 self.tries += 1
 
-
-
-
-
     def disconnect(self):
         if self.file:
             self.file.close()
         self.socket.close()
         print(f"Successfully disconnected from {self.address[0]}:{self.address[1]}.")
             
-
-    def send_file_to_client(self, message, address):
-        file_size = os.path.getsize(message.file_name)
-        file_name = message.file_name
-
-        with open(message.file_name, "r") as file:
-            seq_num = 0
-
-            for data in read_file_data(file, len(file_name)):
-                data_size = len(data)
-                tries = 0
-
-                while tries < 3:
-                    type = DATA_TYPE
-                    if file_name != "":
-                        type = DOWNLOAD_TYPE
-                    self.socket.sendto(Message(type, seq_num, data, file_name, file_size).encode(), address)
-
-                    try:
-                        encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                        decoded_msg = Message.decode(encoded_msg)
-                        if not decoded_msg.is_ack():
-                            tries += 1
-                            continue
-                    except timeout:
-                        tries += 1
-                        print("Timeout waiting for server ACK response. Retrying...")
-                        continue
-
-                    file_name = ""
-                    break
-
-                if tries >= 3:
-                    print(f"Failed to upload file.")
-                    return
-                
-                if file_size - data_size <= 0:
-                    print("File download completed successfully.")
-
-                seq_num += 1
-                file_size -= data_size
-
-
 
 def read_file_data(file):
     while True:

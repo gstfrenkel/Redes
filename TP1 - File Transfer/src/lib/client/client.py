@@ -107,18 +107,20 @@ class Client:
     def download(self, message):
         file = open(self.src_path, "wb+")
         file.write(message.data.encode())
-        """if message.is_last_data_type():
-            return"""
+        if message.is_last_data_type():
+            return
         
-        """handler = StopAndWait(self.socket, self.address, file, self.seq_num)
-        ok = handler.download(False)
+        handler = StopAndWait(self.socket, self.address, file, self.seq_num)
+        ok = handler.receive(False)
         if ok:
             print("Successfully downloaded file.")
         else:
-            print(f"Failed to download file.")"""
+            print(f"Failed to download file.")
 
 
-        while self.tries < MAX_TRIES:
+        """while self.tries < MAX_TRIES:
+            self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
+
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
@@ -126,6 +128,8 @@ class Client:
                 continue
 
             message = Message.decode(enc_msg)
+            print(f"Received: {message.type} {message.seq_num}")
+            print(f"{message.data}")
 
             if message.seq_num == self.seq_num + 1:
                 self.tries = 0
@@ -137,13 +141,12 @@ class Client:
             if message.is_last_data_type():
                 break
 
-            self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 
         if self.tries >= MAX_TRIES:
             print(f"Failed to download file.")
             return
 
-        print("Successfully downloaded file.")
+        print("Successfully downloaded file.")"""
 
 
 def read_file_data(file):

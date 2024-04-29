@@ -12,8 +12,7 @@ class StopAndWait:
 
     def receive(self, is_server):
         while self.tries < MAX_TRIES:
-            if is_server:
-                self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
+            self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
@@ -36,7 +35,5 @@ class StopAndWait:
 
             if message.is_last_data_type() and not is_server:
                 break
-            if not is_server:
-                self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 
         return self.tries < MAX_TRIES
