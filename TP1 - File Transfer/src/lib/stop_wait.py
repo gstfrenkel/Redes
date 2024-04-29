@@ -18,7 +18,7 @@ class StopAndWait:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
-                print(f"Timeout waiting for ACK response for package {self.seq_num}. Retrying...")
+                print(f"Timeout waiting for data package {self.seq_num + 1}. Retrying...")
                 self.tries += 1
                 continue
 
@@ -67,7 +67,7 @@ class StopAndWait:
                     self.tries = 0
                 except timeout:
                     self.tries += 1
-                    print(f"Timeout waiting for ACK response for package {self.seq_num}. Retrying...")
+                    print(f"Timeout waiting for ACK package {self.seq_num}. Retrying...")
                     continue
 
                 break
