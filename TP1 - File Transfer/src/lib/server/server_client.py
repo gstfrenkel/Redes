@@ -32,7 +32,6 @@ class ServerClient:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
-                print("Timeout waiting for more data")
                 self.tries += 1
                 continue
 
