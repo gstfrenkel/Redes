@@ -38,8 +38,8 @@ class Message:
 	def is_download_type(self):
 		return self.type == DOWNLOAD_TYPE
 
-	def is_data_type(self):
-		return self.type == DATA_TYPE
+	def is_last_data_type(self):
+		return self.type == LAST_DATA_TYPE
 	
 	def is_disconnect(self):
 		return self.type == END_TYPE

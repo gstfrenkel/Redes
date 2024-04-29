@@ -19,8 +19,8 @@ def createClientAndDownloadFromServer(args):
     dest_path = args[args.index('-d') + 1]
     file_name = args[args.index('-n') + 1]
     client = Client(address, port, dest_path, file_name)
-    client.connect(DOWNLOAD_TYPE)
-    client.download()
+    message = client.connect(DOWNLOAD_TYPE)
+    client.download(message)
     client.disconnect()
     return 0
 
