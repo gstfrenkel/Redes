@@ -33,53 +33,13 @@ class ServerClient:
         else:
             print(f"Failed to upload file from {self.address[0]}:{self.address[1]}.")
                 
-
     def upload(self, file_path):
-        file_size = os.path.getsize(file_path)
         self.seq_num += 1
 
-        for data in read_file_data(self.file):
-            data_size = len(data)
-
-            while self.tries < MAX_TRIES:
-                type = DATA_TYPE
-                if file_size - data_size <= 0:
-                    type = LAST_DATA_TYPE
-
-                self.socket.sendto(Message(type, self.seq_num, data).encode(), self.address)
-                print(f"Sending {type} {self.seq_num}")
-                print(data)
-
-                try:
-                    encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                    message = Message.decode(encoded_msg)
-
-                    if message.is_disconnect():
-                        self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
-                        break
-
-                    if not message.is_ack() or message.seq_num != self.seq_num:
-                        self.tries += 1
-                        continue
-                    self.tries = 0
-                except timeout:
-                    self.tries += 1
-                    print(f"Timeout waiting for ACK response for package {self.seq_num}. Retrying...")
-                    continue
-
-                break
-
-            if self.tries >= MAX_TRIES:
-                print(f"Failed to upload file.")
-                return
-
-            self.seq_num += 1
-            file_size -= data_size
-
-        if self.seq_num > 1:
-            return
+        handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
+        ok, self.seq_num = handler.send(file_path)
         
-        while self.tries < MAX_TRIES:
+        while self.seq_num <= 1 and self.tries < MAX_TRIES:
             self.socket.sendto(Message(LAST_DATA_TYPE, self.seq_num, "").encode(), self.address)
             try:
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
@@ -91,17 +51,14 @@ class ServerClient:
             except timeout:
                 self.tries += 1
 
+        if ok and self.tries < MAX_TRIES:
+            print(f"Successfully uploaded file to {self.address[0]}:{self.address[1]}.")
+        else:
+            print(f"Failed to upload file to {self.address[0]}:{self.address[1]}.")
+
     def disconnect(self):
         if self.file:
             self.file.close()
         self.socket.close()
         print(f"Successfully disconnected from {self.address[0]}:{self.address[1]}.")
             
-
-def read_file_data(file):
-    while True:
-        data = file.read(MAX_MESSAGE_SIZE - HEADER_SIZE)
-
-        if not data:
-            break
-        yield data

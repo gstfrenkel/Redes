@@ -65,43 +65,16 @@ class Client:
 
     def upload(self):
         file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.src_path)
+        file = open(file_path, "r")
 
-        with open(file_path, "r") as file:
-            file_size = os.path.getsize(file_path)
+        handler = StopAndWait(self.socket, self.address, file, self.seq_num)
+        ok, _ = handler.send(file_path)
+        file.close()
 
-            for data in read_file_data(file):
-                data_size = len(data)
-
-                while self.tries < MAX_TRIES:
-                    type = DATA_TYPE
-                    if file_size - data_size <= 0:
-                        type = LAST_DATA_TYPE
-                        
-                    self.socket.sendto(Message(type, self.seq_num, data).encode(), self.address)
-
-                    try:
-                        encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-                        message = Message.decode(encoded_msg)
-
-                        if not message.is_ack() or message.seq_num != self.seq_num:
-                            self.tries += 1
-                            continue
-                        self.tries = 0
-                    except timeout:
-                        self.tries += 1
-                        print(f"Timeout waiting for ACK response for package {self.seq_num}. Retrying...")
-                        continue
-
-                    break
-
-                if self.tries >= MAX_TRIES:
-                    print(f"Failed to upload file.")
-                    return
-
-                self.seq_num += 1
-                file_size -= data_size
-
-        print("Successfully uploaded file.")
+        if ok:
+            print("Successfully uploaded file.")
+        else:
+            print("Failed to upload file.")
 
 
     def download(self, message):
@@ -116,43 +89,3 @@ class Client:
             print("Successfully downloaded file.")
         else:
             print(f"Failed to download file.")
-
-
-        """while self.tries < MAX_TRIES:
-            self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
-
-            try:
-                enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-            except timeout:
-                self.tries += 1
-                continue
-
-            message = Message.decode(enc_msg)
-            print(f"Received: {message.type} {message.seq_num}")
-            print(f"{message.data}")
-
-            if message.seq_num == self.seq_num + 1:
-                self.tries = 0
-                file.write(message.data.encode())
-                self.seq_num = message.seq_num
-            else:
-                self.tries += 1
-                
-            if message.is_last_data_type():
-                break
-
-
-        if self.tries >= MAX_TRIES:
-            print(f"Failed to download file.")
-            return
-
-        print("Successfully downloaded file.")"""
-
-
-def read_file_data(file):
-    while True:
-        data = file.read(MAX_MESSAGE_SIZE - HEADER_SIZE)
-
-        if not data:
-            break
-        yield data
