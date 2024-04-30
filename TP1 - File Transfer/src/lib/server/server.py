@@ -1,4 +1,3 @@
-from queue import Queue
 from socket import * 
 from threading import * 
 from lib.message import * 
@@ -12,7 +11,6 @@ class Server:
 
         self.address = str(address)
         self.port = int(port)
-        self.clients = {}
 
         self.start()
 
@@ -27,21 +25,14 @@ class Server:
             try:
                 message, address = serverSocket.recvfrom(MAX_MESSAGE_SIZE)
 
-                if address not in self.clients:
-                    self.clients[address] = Queue()
-
-                    client = Thread(target=self.handle_client_msg, args=(address, self.clients[address]))
-                    client.start()
-
-                self.clients[address].put(message)
+                client = Thread(target=self.handle_client_msg, args=(address, message))
+                client.start()
             except Exception as e:
                 print(f"Failed to receive message: {e}")
 
-    def handle_client_msg(self, address, queue):
-        client = ServerClient()
-        client.handle_client_msg(address, queue)
-        del(self.clients[address])
-
+    def handle_client_msg(self, address, message):
+        client = ServerClient(address)
+        client.start(Message.decode(message))
 
 def help():
     print('usage: start-server [-h] [-v |-q] [-H ADDR] [-p PORT] [-s DIRPATH]\n\n')

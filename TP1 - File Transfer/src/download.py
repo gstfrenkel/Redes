@@ -1,5 +1,5 @@
 import sys
-from lib.client_helper import *
+from lib.client.client_helper import *
 
 def main(args):
     try:
@@ -9,7 +9,8 @@ def main(args):
         else:
             createClientAndDownloadFromServer(useFullArgs)
                 
-    except Exception:
+    except Exception as e:
+        print(e)
         print("\nExiting...")
         sys.exit(0)
 
