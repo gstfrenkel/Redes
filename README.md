@@ -1,30 +1,12 @@
 # Redes
 
-## Ejemplos de uso
+'sudo python3 topology.py': Ejecuta mininet con la topologìa creada por nosotros.
 
-### Start Server
-```
-python3 start-server.py -H 127.0.0.1 -p 3500 -s lib/server/
-```
+'link s1 h1 up': Establece la conexión entre el switch y el host y la pone en estado activo.
 
-donde:
--s: path donde guarda el archivo en caso de upload.
-### Upload
+'s1 tc qdisc add dev s1-eth2 root netem loss 10%' : Establece perdida de paquetes del 10% para el switch s1 salida eth2.
 
-```
-python3 upload.py -H 127.0.0.1 -p 3500 -s prueba.txt -n pruebaII.txt
-```
+'s1 tc qdisc del dev s1-eth2 root netem loss 10%': Elimina la regla establecida para la pèrdida de paquetes.
 
-donde:
--s: nombre del archivo de origen. (TODO: debería ser un path al archivo, ó un path absoluto)
--n: nombre del archivo como se sube al servidor.
+'xterm h1': Abre una ventana de terminal gráfica para el host h1.
 
-### Download
-
-```
-python3 download.py -H 127.0.0.1 -p 3500 -d prueba.txt -n pruebaII.txt
-```
-
-donde:
--d: nombre del archivo de destino. (TODO: debería ser un path relativo al archivo, ó un path absoluto)
--n: nombre del archivo a descargar.

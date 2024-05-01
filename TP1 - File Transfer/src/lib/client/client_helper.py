@@ -1,5 +1,6 @@
 from lib.client import *
 from lib.client.client import Client
+from lib.message import UPLOAD_TYPE, DOWNLOAD_TYPE
 
 def createClientAndUploadToServer(args):
     address =  args[args.index('-H') + 1]
@@ -7,7 +8,7 @@ def createClientAndUploadToServer(args):
     src_path = args[args.index('-s') + 1]
     file_name = args[args.index('-n') + 1]
     client = Client(address, port, src_path, file_name)
-    client.connect()
+    client.connect(UPLOAD_TYPE)
     client.upload()
     client.disconnect()
     return 0
@@ -18,8 +19,8 @@ def createClientAndDownloadFromServer(args):
     dest_path = args[args.index('-d') + 1]
     file_name = args[args.index('-n') + 1]
     client = Client(address, port, dest_path, file_name)
-    client.connect()
-    client.download()
+    message = client.connect(DOWNLOAD_TYPE)
+    client.download(message)
     client.disconnect()
     return 0
 
