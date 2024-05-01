@@ -47,12 +47,14 @@ class SelectiveRepeat:
                 type = LAST_DATA_TYPE
 
             message = Message(type, self.seq_num, data).encode()
+
             self.socket.sendto(message, self.address)
 
             with self.pendings_lock:
                 self.pendings[self.seq_num] = (message, time.time(), 0, False)
             self.seq_num += 1
             file_size -= data_size
+            print(f"Sent {self.seq_num}. Remaining file size: {file_size}")
 
         if not empty_file:
             thread_recv_acks.join()
@@ -78,6 +80,7 @@ class SelectiveRepeat:
 
             self.tries = 0
             message = Message.decode(enc_msg)
+            print(f"Received {message.seq_num}")
 
             if message.is_disconnect():
                 self.disconnected = True
@@ -99,7 +102,6 @@ class SelectiveRepeat:
         
     def check_timeouts(self):
         while not self.abort and not self.disconnected:
-            time.sleep(0.1)     # Para evitar que se bloquee el set de pendings demasiado tiempo (Este bloqueo puede causar timeouts si se hace muy seguido).
             with self.pendings_lock:
                 for k, v in self.pendings.items():
                     if time.time() - v[1] >= TIMEOUT and not v[3]:
@@ -108,7 +110,7 @@ class SelectiveRepeat:
                             self.abort = True
                             break
                         self.socket.sendto(v[0], self.address)
-                        self.pendings[k] = (v[0], time.time(), v[2] + 1, False)  
+                        self.pendings[k] = (v[0], time.time(), v[2] + 1, False)
 
     def update_base_seq_num(self, message):
         if self.base != message.seq_num:
@@ -134,11 +136,13 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
+                self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
                 print("Timeout")
-                self.tries += 1
                 continue
             self.tries = 0
             message = Message.decode(enc_msg)
+
+            print(f"Received {message.seq_num}")
 
             if is_server or not message.is_last_data_type():
                 self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
