@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 3
+WINDOW_SIZE = 2
 
 class SelectiveRepeat:
     def __init__(self, socket, address, file, seq_num):
@@ -87,19 +87,27 @@ class SelectiveRepeat:
                 break
 
             with self.pendings_lock:
-                print(f"Received {message.seq_num} of type {message.type}")
-                self.pendings[message.seq_num] = (enc_msg, time.time(), 0, True)
+                if message.seq_num in self.pendings:
+                    #print(f"Received {message.seq_num} of type {message.type}")
 
-                self.update_base_seq_num(message)
+                    self.pendings[message.seq_num] = (enc_msg, time.time(), 0, True)
 
-                # ----------------------- Es una villereada pero sino, no anda ( ͡❛ ͜ʖ ͡❛) -----------------------
-                keys_to_delete = []
-                for k in self.pendings.keys():
-                    if k < self.base:
-                        keys_to_delete.append(k)
+                    self.update_base_seq_num(message)
 
-                for k in keys_to_delete:
-                    del self.pendings[k]
+                    # ----------------------- Es una villereada pero sino, no anda ( ͡❛ ͜ʖ ͡❛) -----------------------
+                    keys_to_delete = []
+                    for k in self.pendings.keys():
+                        print(f"Pendings antes de borrar con base {self.base}:")
+                        print(f"{k}:")
+                        if k < self.base:
+                            keys_to_delete.append(k)
+                    print("\n")
+
+                    for k in keys_to_delete:
+                        del self.pendings[k]
+
+                    for k, v in self.pendings.items():
+                        print(f"{k}: ACK'ed {v[3]}")
         
     def check_timeouts(self):
         while not self.abort and not self.disconnected:
@@ -116,23 +124,23 @@ class SelectiveRepeat:
         if self.base != message.seq_num:
             return
         
-        print(f"\n\nEntró a update base con seq_num {message.seq_num}")
+        #print(f"\nEntró a update base con seq_num {message.seq_num}")
 
         if len(self.pendings) == 1:
-            print(f"Avanzó a {self.base + 1}")
+            #print(f"Avanzó a {self.base + 1}")
             self.base += 1
             return
         
         next_base = -1
         for k, v in self.pendings.items():
-            print(f"Pending: {k}: ({v[1]}, {v[3]})")
+            #print(f"Pending: {k}: ({v[1]}, {v[3]})")
             if (next_base == -1 or k < next_base) and not v[3]:
                 next_base = k
 
         if next_base == -1:
             next_base = message.seq_num + WINDOW_SIZE
 
-        print(f"Avanzó a {next_base}")
+        #print(f"Avanzó a {next_base}")
         self.base = next_base
     
     # receiver
