@@ -27,7 +27,6 @@ class ServerClient:
         self.disconnect()
 
     def download(self):
-        print("Llegó el intento de conexión!")
         #handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
         handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
         ok = handler.receive(True)
@@ -42,7 +41,7 @@ class ServerClient:
         #handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
         handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
         ok, self.seq_num = handler.send(file_path)
-        
+
         while self.seq_num <= 1 and self.tries < MAX_TRIES:
             self.socket.sendto(Message(LAST_DATA_TYPE, self.seq_num, "").encode(), self.address)
             try:

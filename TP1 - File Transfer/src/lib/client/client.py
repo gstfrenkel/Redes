@@ -83,9 +83,13 @@ class Client:
         file = open(self.src_path, "wb+")
         file.write(message.data.encode())
         if message.is_last_data_type():
+            print("Successfully downloaded file.")
             return
-
-        self.socket.sendto(Message(ACK_TYPE, 1).encode(), self.address)
+        
+        # SOLO en caso de ser selective repeat:
+        # ///////////////////////////////
+        self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
+        # ///////////////////////////////
 
         
         #handler = StopAndWait(self.socket, self.address, file, self.seq_num)
