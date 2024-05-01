@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 5
+WINDOW_SIZE = 3
 
 class SelectiveRepeat:
     def __init__(self, socket, address, file, seq_num):
@@ -17,7 +17,7 @@ class SelectiveRepeat:
         self.seq_num = seq_num
         self.base = seq_num
         self.pendings_lock = Lock()
-        self.pendings = {}  # Set de ACKs (seqnum) con (Data, timestamp, tries)
+        self.pendings = {}  # Set de ACKs (seqnum) con (Data, timestamp, tries, acknowledged)
         self.abort = False
         self.disconnected = False
     
@@ -51,10 +51,11 @@ class SelectiveRepeat:
             self.socket.sendto(message, self.address)
 
             with self.pendings_lock:
+                print(f"Sent {self.seq_num}. Window base: {self.base}. Remaining file size: {file_size - data_size}")
+
                 self.pendings[self.seq_num] = (message, time.time(), 0, False)
             self.seq_num += 1
             file_size -= data_size
-            print(f"Sent {self.seq_num}. Remaining file size: {file_size}")
 
         if not empty_file:
             thread_recv_acks.join()
@@ -80,13 +81,13 @@ class SelectiveRepeat:
 
             self.tries = 0
             message = Message.decode(enc_msg)
-            print(f"Received {message.seq_num}")
 
             if message.is_disconnect():
                 self.disconnected = True
                 break
 
             with self.pendings_lock:
+                print(f"Received {message.seq_num} of type {message.type}")
                 self.pendings[message.seq_num] = (enc_msg, time.time(), 0, True)
 
                 self.update_base_seq_num(message)
@@ -105,7 +106,6 @@ class SelectiveRepeat:
             with self.pendings_lock:
                 for k, v in self.pendings.items():
                     if time.time() - v[1] >= TIMEOUT and not v[3]:
-                        print(f"Timeout en pkg {k}")
                         if v[2] >= MAX_TRIES:
                             self.abort = True
                             break
@@ -115,19 +115,24 @@ class SelectiveRepeat:
     def update_base_seq_num(self, message):
         if self.base != message.seq_num:
             return
+        
+        print(f"\n\nEntró a update base con seq_num {message.seq_num}")
 
         if len(self.pendings) == 1:
+            print(f"Avanzó a {self.base + 1}")
             self.base += 1
             return
         
         next_base = -1
         for k, v in self.pendings.items():
+            print(f"Pending: {k}: ({v[1]}, {v[3]})")
             if (next_base == -1 or k < next_base) and not v[3]:
                 next_base = k
 
         if next_base == -1:
             next_base = message.seq_num + WINDOW_SIZE
-            
+
+        print(f"Avanzó a {next_base}")
         self.base = next_base
     
     # receiver
@@ -136,8 +141,8 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
-                self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
                 print("Timeout")
+                self.tries += 1
                 continue
             self.tries = 0
             message = Message.decode(enc_msg)
