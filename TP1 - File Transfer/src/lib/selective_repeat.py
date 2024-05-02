@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 10
+WINDOW_SIZE = 3
 
 class SelectiveRepeat:
     def __init__(self, socket, address, file, seq_num):
@@ -54,7 +54,7 @@ class SelectiveRepeat:
                 print(f"Sent {self.seq_num}. Window base: {self.base}. Remaining file size: {file_size - data_size}")
 
                 self.pendings[self.seq_num] = (message, time.time(), 0, False)
-            self.seq_num += 1
+                self.seq_num += 1
             file_size -= data_size
 
         if not empty_file:
@@ -133,7 +133,7 @@ class SelectiveRepeat:
                 next_base = k
 
         if next_base == -1:
-            next_base = message.seq_num + WINDOW_SIZE
+            next_base = self.seq_num #message.seq_num + WINDOW_SIZE
 
         #print(f"Avanzó a {next_base}")
         self.base = next_base
