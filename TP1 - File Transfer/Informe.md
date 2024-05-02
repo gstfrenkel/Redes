@@ -215,4 +215,4 @@ _En cambio, TCP se utiliza en escenarios donde la confiabilidad de la entrega es
 
 # Conclusión
 
-En esta sección se explayará sobre la conclusión a lo largo del desarrollo del trabajo práctico.
+- En esta sección se explayará sobre la conclusión a lo largo del desarrollo del trabajo práctico.
