@@ -154,6 +154,7 @@ class SelectiveRepeat:
 
             if is_server or not message.is_last_data_type():
                 self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
+            # Deberiamos mandar el ack del last data type y del disconnect
             
             if message.seq_num > self.seq_num + 1:      # Si llega un data posterior al que se necesita.
                 self.pendings[message.seq_num] = message.data

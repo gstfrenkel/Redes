@@ -28,7 +28,12 @@ class ServerClient:
 
     def download(self):
         #handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
+        
         handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
+        # SOLO en caso de ser selective repeat:
+        # ///////////////////////////////
+        self.socket.sendto(Message.new_ack().encode(), self.address)
+        # ///////////////////////////////
         ok = handler.receive(True)
         if ok:
             print(f"Successfully uploaded file from {self.address[0]}:{self.address[1]}.")
