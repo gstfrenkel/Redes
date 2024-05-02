@@ -1,3 +1,12 @@
+local decode_msg_type = {
+    [1] = 'UPLOAD',
+    [2] = 'DOWNLOAD',
+    [3] = 'DATA_TYPE',
+    [4] = 'LAST_DATA_TYPE',
+    [5] = 'ACK_TYPE',
+    [6] = 'END_TYPE'
+}
+
 local p_rdt_protocol_g_09 = Proto("rdt_protocol_g_09", "RDT G9")
 
 
@@ -19,10 +28,17 @@ function p_rdt_protocol_g_09.dissector(buf, pinfo, tree)
     subtree:add(seq_num, buf(1, 4))
     subtree:add(data, buf(5))
 
+    local m_type = buf(0,1):uint()
+
 
     pinfo.cols.protocol:set("RDT G9")
-end
 
+    if decode_msg_type[m_type] then
+        pinfo.cols.info = decode_msg_type[m_type]
+    else
+        pinfo.cols.info = "Mensaje Desconocido"
+    end
+end
 
 local udp_port = DissectorTable.get("udp.port")
 udp_port:add(6653, p_rdt_protocol_g_09)
