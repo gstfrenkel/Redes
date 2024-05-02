@@ -30,7 +30,7 @@ class StopAndWait:
 
             if message.seq_num == self.seq_num + 1:
                 self.tries = 0
-                self.file.write(message.data.encode())
+                self.file.write(message.data)
                 self.seq_num = message.seq_num
             else:
                 self.tries += 1

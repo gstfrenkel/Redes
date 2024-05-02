@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 2
+WINDOW_SIZE = 10
 
 class SelectiveRepeat:
     def __init__(self, socket, address, file, seq_num):
@@ -92,22 +92,17 @@ class SelectiveRepeat:
 
                     self.pendings[message.seq_num] = (enc_msg, time.time(), 0, True)
 
+                    aux_base = self.base
                     self.update_base_seq_num(message)
+                    if aux_base != self.base:
+                        # ----------------------- Es una villereada pero sino, no anda ( ͡❛ ͜ʖ ͡❛) -----------------------
+                        keys_to_delete = []
+                        for k in self.pendings.keys():
+                            if k < self.base:
+                                keys_to_delete.append(k)
 
-                    # ----------------------- Es una villereada pero sino, no anda ( ͡❛ ͜ʖ ͡❛) -----------------------
-                    keys_to_delete = []
-                    for k in self.pendings.keys():
-                        print(f"Pendings antes de borrar con base {self.base}:")
-                        print(f"{k}:")
-                        if k < self.base:
-                            keys_to_delete.append(k)
-                    print("\n")
-
-                    for k in keys_to_delete:
-                        del self.pendings[k]
-
-                    for k, v in self.pendings.items():
-                        print(f"{k}: ACK'ed {v[3]}")
+                        for k in keys_to_delete:
+                            del self.pendings[k]
         
     def check_timeouts(self):
         while not self.abort and not self.disconnected:
@@ -133,7 +128,7 @@ class SelectiveRepeat:
         
         next_base = -1
         for k, v in self.pendings.items():
-            #print(f"Pending: {k}: ({v[1]}, {v[3]})")
+            print(f"Pending: {k}: ({v[1]}, {v[3]})")
             if (next_base == -1 or k < next_base) and not v[3]:
                 next_base = k
 
@@ -166,12 +161,12 @@ class SelectiveRepeat:
             if message.seq_num != self.seq_num + 1:     # Si es un data repetido.
                 continue
 
-            self.file.write(message.data.encode())
+            self.file.write(message.data)
             self.abort = message.is_last_data_type()
             self.seq_num += 1
 
             while self.seq_num in self.pendings:
-                self.file.write(self.pendings[self.seq_num].encode())
+                self.file.write(self.pendings[self.seq_num])
                 self.abort = self.pendings[self.seq_num].is_last_data_type()
                 self.seq_num += 1      
         

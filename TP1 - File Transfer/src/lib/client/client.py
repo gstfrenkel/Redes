@@ -66,7 +66,7 @@ class Client:
 
     def upload(self):
         file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.src_path)
-        file = open(file_path, "r")
+        file = open(file_path, "rb")
 
         #handler = StopAndWait(self.socket, self.address, file, self.seq_num)
         handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num)
@@ -81,10 +81,11 @@ class Client:
 
     def download(self, message):
         file = open(self.src_path, "wb+")
-        file.write(message.data.encode())
+        file.write(message.data)
         if message.is_last_data_type():
             print("Successfully downloaded file.")
             return
+        
         
         # SOLO en caso de ser selective repeat:
         # ///////////////////////////////

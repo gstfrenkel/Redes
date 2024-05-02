@@ -18,10 +18,10 @@ class ServerClient:
 
     def start(self, message):
         if message.is_upload_type():
-            self.file = open(message.data, "wb+")
+            self.file = open(message.data.decode(), "wb+")
             self.download()
         elif message.is_download_type():
-            self.file = open(message.data, "r")
+            self.file = open(message.data.decode(), "rb")
             self.upload(message.data)
 
         self.disconnect()
