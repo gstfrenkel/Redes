@@ -60,6 +60,7 @@ class SelectiveRepeat:
                 self.seq_num += 1
 
                 file_size -= data_size
+                break
 
         if not empty_file:
             thread_recv_acks.join()
@@ -81,6 +82,8 @@ class SelectiveRepeat:
                 self.abort = True
                 return
             self.socket.sendto(pending[0], self.address)
+            print(f"Sent timeout {seq_num}")
+
             self.timestamps.put((k, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
         elif type == ACK_TYPE:
