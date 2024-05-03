@@ -43,7 +43,7 @@ class SelectiveRepeat:
             data_size = len(data)
 
             while not self.abort and not self.disconnected:
-                if self.base + WINDOW_SIZE <= self.seq_num:
+                if self.base + WINDOW_SIZE <= self.seq_num:     # Si la ventana está llena
                     self.process_request()
                     continue
 
@@ -143,9 +143,8 @@ class SelectiveRepeat:
 
             if message.is_disconnect():
                 self.disconnected = True
-                break
-
-            self.requests.put((ACK_TYPE, message.seq_num))
+            else:
+                self.requests.put((ACK_TYPE, message.seq_num))
         
     def check_timeouts(self):
         timestamps = {}
