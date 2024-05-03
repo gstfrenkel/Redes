@@ -7,6 +7,7 @@ import time
 import os
 
 WINDOW_SIZE = 3
+TIMEOUT_TYPE = -1
 
 class SelectiveRepeat:
     def __init__(self, socket, address, file, seq_num):
@@ -14,10 +15,16 @@ class SelectiveRepeat:
         self.address = address
         self.file = file
         self.tries = 0
+
         self.seq_num = seq_num
         self.base = seq_num
+
         self.pendings_lock = Lock()
         self.pendings = {}  # Set de ACKs (seqnum) con (Data, timestamp, tries, acknowledged)
+        self.pendings_len = 0
+
+        self.requests = Queue()
+
         self.abort = False
         self.disconnected = False
     
@@ -34,28 +41,30 @@ class SelectiveRepeat:
 
         for data in read_file_data(self.file):
             data_size = len(data)
-            
-            while self.seq_num >= self.base + WINDOW_SIZE:
-                if self.abort or self.disconnected:
-                    break
-                continue
-            if self.abort or self.disconnected:
-                break
-            
-            type = DATA_TYPE
-            if file_size - data_size <= 0:
-                type = LAST_DATA_TYPE
 
-            message = Message(type, self.seq_num, data).encode()
+            while not self.abort and not self.disconnected:
+                if self.base + WINDOW_SIZE >= self.seq_num:
+                    with self.pendings_lock:
+                        self.process_request()
+                    continue
 
-            self.socket.sendto(message, self.address)
+                type = DATA_TYPE
+                if file_size - data_size <= 0:
+                    type = LAST_DATA_TYPE
 
-            with self.pendings_lock:
-                print(f"Sent {self.seq_num}. Window base: {self.base}. Remaining file size: {file_size - data_size}")
+                message = Message(type, self.seq_num, data).encode()
 
-                self.pendings[self.seq_num] = (message, time.time(), 0, False)
-                self.seq_num += 1
-            file_size -= data_size
+                self.socket.sendto(message, self.address)
+
+                with self.pendings_lock:
+                    self.pendings[self.seq_num] = (message, time.time(), 0, False)
+                    self.seq_num += 1
+                file_size -= data_size
+
+
+
+
+
 
         if not empty_file:
             thread_recv_acks.join()
@@ -65,6 +74,18 @@ class SelectiveRepeat:
             self.socket.sendto(Message.new_ack().encode(), self.address)
 
         return not self.abort, self.seq_num
+    
+    def process_request(self):
+        (type, seq_num) = self.requests.get()
+
+        if type == TIMEOUT_TYPE:
+            if seq_num not in self.pendings:
+                return
+            self.socket.sendto(self.pendings[seq_num], self.address)
+            self.pendings[seq_num] = (self.pendings[0], )
+
+
+
 
     def recv_acks(self):
         while not self.abort and not self.disconnected:
@@ -86,34 +107,20 @@ class SelectiveRepeat:
                 self.disconnected = True
                 break
 
-            with self.pendings_lock:
-                if message.seq_num in self.pendings:
-                    #print(f"Received {message.seq_num} of type {message.type}")
-
-                    self.pendings[message.seq_num] = (enc_msg, time.time(), 0, True)
-
-                    aux_base = self.base
-                    self.update_base_seq_num(message)
-                    if aux_base != self.base:
-                        # ----------------------- Es una villereada pero sino, no anda ( ͡❛ ͜ʖ ͡❛) -----------------------
-                        keys_to_delete = []
-                        for k in self.pendings.keys():
-                            if k < self.base:
-                                keys_to_delete.append(k)
-
-                        for k in keys_to_delete:
-                            del self.pendings[k]
+            self.requests.put((ACK_TYPE, message.seq_num))
         
     def check_timeouts(self):
         while not self.abort and not self.disconnected:
             with self.pendings_lock:
                 for k, v in self.pendings.items():
-                    if time.time() - v[1] >= TIMEOUT and not v[3]:
-                        if v[2] >= MAX_TRIES:
-                            self.abort = True
-                            break
-                        self.socket.sendto(v[0], self.address)
-                        self.pendings[k] = (v[0], time.time(), v[2] + 1, False)
+                    if time.time() - v[1] >= TIMEOUT:
+                        self.requests.put((TIMEOUT_TYPE, k))
+
+
+
+
+
+
 
     def update_base_seq_num(self, message):
         if self.base != message.seq_num:
