@@ -3,11 +3,7 @@ from lib.client.client_helper import *
 
 def main(args):
     try:
-        useFullArgs = args[1:]
-        if '-h' in useFullArgs:
-            showDownloadUsage()
-        else:
-            createClientAndDownloadFromServer(useFullArgs)
+        createClientAndDownloadFromServer(args)
                 
     except Exception as e:
         print(e)
