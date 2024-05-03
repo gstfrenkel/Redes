@@ -100,7 +100,7 @@ class SelectiveRepeat:
                     del self.pendings[k]
 
     def update_base_seq_num(self):
-        if len(self.pendings) == 1:
+        if not self.pendings[self.base+1]:
             self.base += 1
         
         next_base = -1
