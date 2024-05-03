@@ -149,9 +149,10 @@ class SelectiveRepeat:
             except Exception as _:
                 _
 
-            for k, v in timestamps.items():
+            for k, v in list(timestamps.items()):
                 if time.time() - v >= TIMEOUT:
                     self.requests.put((TIMEOUT_TYPE, k))
+                    del timestamps[k]
 
     # receiver
     def receive(self, is_server):

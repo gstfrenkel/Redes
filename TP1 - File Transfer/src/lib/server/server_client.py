@@ -19,32 +19,35 @@ class ServerClient:
     def start(self, message):
         if message.is_upload_type():
             self.file = open(message.data.decode(), "wb+")
-            self.download()
+            self.download(message.type)
         elif message.is_download_type():
             self.file = open(message.data.decode(), "rb")
-            self.upload(message.data)
+            self.upload(message.data, message.type)
 
         self.disconnect()
 
-    def download(self):
-        #handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
-        
-        handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
-        # SOLO en caso de ser selective repeat:
-        # ///////////////////////////////
-        self.socket.sendto(Message.new_ack().encode(), self.address)
-        # ///////////////////////////////
+    def download(self, msg_type):
+        if msg_type == UPLOAD_TYPE_SW:
+            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
+        else:
+            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
+            self.socket.sendto(Message.new_ack().encode(), self.address)
+
         ok = handler.receive(True)
         if ok:
             print(f"Successfully uploaded file from {self.address[0]}:{self.address[1]}.")
         else:
             print(f"Failed to upload file from {self.address[0]}:{self.address[1]}.")
                 
-    def upload(self, file_path):
+    def upload(self, file_path, msg_type):
+        if msg_type == DOWNLOAD_TYPE_SW:
+            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
+        else:
+            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
+
+
         self.seq_num += 1
 
-        #handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
-        handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
         ok, self.seq_num = handler.send(file_path)
 
         while self.seq_num <= 1 and self.tries < MAX_TRIES:
