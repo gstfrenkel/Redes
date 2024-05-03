@@ -64,12 +64,15 @@ class Client:
 
         self.socket.close()
 
-    def upload(self):
+    def upload(self, protocol):
         file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.src_path)
         file = open(file_path, "rb")
 
-        #handler = StopAndWait(self.socket, self.address, file, self.seq_num)
-        handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num)
+        if protocol == SW:
+            handler = StopAndWait(self.socket, self.address, file, self.seq_num)
+        else:
+            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num)
+
         ok, _ = handler.send(file_path)
         file.close()
 
@@ -79,22 +82,21 @@ class Client:
             print("Failed to upload file.")
 
 
-    def download(self, message):
+    def download(self, message, protocol):
+        print('protocol',protocol)
         file = open(self.src_path, "wb+")
         file.write(message.data)
         if message.is_last_data_type():
             print("Successfully downloaded file.")
             return
         
-        
-        # SOLO en caso de ser selective repeat:
-        # ///////////////////////////////
-        self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
-        # ///////////////////////////////
+        if protocol == SW:
+            handler = StopAndWait(self.socket, self.address, file, self.seq_num)
+        else:
+            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num) 
+            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
 
         
-        #handler = StopAndWait(self.socket, self.address, file, self.seq_num)
-        handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num)
         ok = handler.receive(False)
         if ok:
             print("Successfully downloaded file.")

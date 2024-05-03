@@ -1,28 +1,60 @@
 from lib.client import *
 from lib.client.client import Client
-from lib.message import UPLOAD_TYPE, DOWNLOAD_TYPE
+from lib.message import UPLOAD_TYPE_SR, UPLOAD_TYPE_SW, DOWNLOAD_TYPE_SR, DOWNLOAD_TYPE_SW
+from lib.command_parser import CommandParser
+from lib.constants import SW, SR
 
 def createClientAndUploadToServer(args):
-    address =  args[args.index('-H') + 1]
-    port = args[args.index('-p') + 1]
-    src_path = args[args.index('-s') + 1]
-    file_name = args[args.index('-n') + 1]
+    parser = CommandParser(args)
+    address, port, src_path, file_name, should_be_verbose, protocol, show_description = parser.parse_command()
+
+    if show_description:
+        showUploadUsage()
+        return 0
+
+    if None in (address, port, src_path, file_name, protocol):
+        print('\n\nError al inciar, revisar la descripcion del comando')
+        showUploadUsage()
+        return 0
+    
     client = Client(address, port, src_path, file_name)
-    client.connect(UPLOAD_TYPE)
-    client.upload()
+
+    if protocol == SW:
+        message_type = UPLOAD_TYPE_SW
+    else:
+        message_type = UPLOAD_TYPE_SR 
+
+    client.connect(message_type)
+    client.upload(protocol)
     client.disconnect()
     return 0
 
 def createClientAndDownloadFromServer(args):
-    address =  args[args.index('-H') + 1]
-    port = args[args.index('-p') + 1]
-    dest_path = args[args.index('-d') + 1]
-    file_name = args[args.index('-n') + 1]
-    client = Client(address, port, dest_path, file_name)
-    message = client.connect(DOWNLOAD_TYPE)
-    if not message:
+    parser = CommandParser(args)
+    address, port, dest_path, file_name, should_be_verbose, protocol, show_description = parser.parse_command()
+    
+    if show_description:
+        showDownloadUsage()
         return 0
-    client.download(message)
+
+    if None in (address, port, dest_path, file_name, protocol):
+        print('\n\nError al inciar, revisar la descripcion del comando')
+        showDownloadUsage()
+        return 0  
+
+    client = Client(address, port, dest_path, file_name)
+
+    if protocol == SW:
+        message_type = DOWNLOAD_TYPE_SW
+    else:
+        message_type = DOWNLOAD_TYPE_SR 
+
+    message = client.connect(message_type)
+    if not message:
+        print('no hay mensaje')
+        return 0
+    
+    client.download(message, protocol)
     client.disconnect()
     return 0
 

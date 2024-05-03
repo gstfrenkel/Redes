@@ -91,13 +91,14 @@ class SelectiveRepeat:
             self.socket.sendto(pending[DATA], self.address)
             print(f"Sent timeout {seq_num}")
 
-            self.timestamps.put((k, time.time()))
+            self.timestamps.put((seq_num, time.time()))
 
             data = pending[DATA]
             tries = pending[TRIES] + 1
             acnowledged = pending[ACKNOWLEDGED]
 
             self.pendings[seq_num] = (data, tries, acnowledged)
+
         elif type == ACK_TYPE:
             if pending[ACKNOWLEDGED]:
                 return
@@ -161,9 +162,10 @@ class SelectiveRepeat:
             except Exception as _:
                 _
 
-            for k, v in timestamps.items():
+            for k, v in list(timestamps.items()):
                 if time.time() - v >= TIMEOUT:
                     self.requests.put((TIMEOUT_TYPE, k))
+                    del timestamps[k]
 
     # receiver
     def receive(self, is_server):

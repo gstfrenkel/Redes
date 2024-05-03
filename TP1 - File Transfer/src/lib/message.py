@@ -1,8 +1,10 @@
 HEADER_SIZE = 5
 
 # Connection
-UPLOAD_TYPE = 1
-DOWNLOAD_TYPE = 2
+UPLOAD_TYPE_SW = 1
+UPLOAD_TYPE_SR = 2
+DOWNLOAD_TYPE_SW = 3
+DOWNLOAD_TYPE_SR = 4
 
 # Data exchange
 DATA_TYPE = 3
@@ -35,10 +37,10 @@ class Message:
 		return self.type == ACK_TYPE
 	
 	def is_upload_type(self):
-		return self.type == UPLOAD_TYPE
+		return self.type == UPLOAD_TYPE_SW or self.type == UPLOAD_TYPE_SR
 
 	def is_download_type(self):
-		return self.type == DOWNLOAD_TYPE
+		return self.type == DOWNLOAD_TYPE_SW or self.type == DOWNLOAD_TYPE_SR
 
 	def is_last_data_type(self):
 		return self.type == LAST_DATA_TYPE
