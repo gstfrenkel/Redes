@@ -1,10 +1,8 @@
-from socket import *
-from lib.message import *
-from lib.message import *
-# from lib.message import DATA_TYPE, LAST_DATA_TYPE, ACK_TYPE, HEADER_SIZE
+from lib.message import Message
+from lib.message import DATA_TYPE, LAST_DATA_TYPE, ACK_TYPE, HEADER_SIZE
 from lib.constants import MAX_MESSAGE_SIZE, MAX_TRIES, TIMEOUT
 from queue import Queue
-from threading import *
+from threading import Thread
 import time
 import os
 
@@ -135,7 +133,7 @@ class SelectiveRepeat:
 
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-            except timeout:
+            except TimeoutError:
                 print("Timeout waiting for ACK package. Retrying...")
                 self.tries += 1
                 continue
@@ -172,7 +170,7 @@ class SelectiveRepeat:
         while not self.abort and self.tries < MAX_TRIES:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
-            except timeout:
+            except TimeoutError:
                 print("Timeout")
                 self.tries += 1
                 continue
