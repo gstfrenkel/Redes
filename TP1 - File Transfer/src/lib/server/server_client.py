@@ -21,6 +21,7 @@ class ServerClient:
             self.file = open(message.data.decode(), "wb+")
             self.download(message.type)
         elif message.is_download_type():
+            print('llega una mensaje de download')
             self.file = open(message.data.decode(), "rb")
             self.upload(message.data, message.type)
 
@@ -40,13 +41,14 @@ class ServerClient:
             print(f"Failed to upload file from {self.address[0]}:{self.address[1]}.")
                 
     def upload(self, file_path, msg_type):
+        self.seq_num += 1
         if msg_type == DOWNLOAD_TYPE_SW:
+            print('upload')
             handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
         else:
             handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
 
 
-        self.seq_num += 1
 
         ok, self.seq_num = handler.send(file_path)
 

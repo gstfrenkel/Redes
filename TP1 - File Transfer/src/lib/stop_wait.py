@@ -13,6 +13,7 @@ class StopAndWait:
 
     def receive(self, is_server):
         while self.tries < MAX_TRIES:
+            print('receive stop and wait')
             self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 
             try:
@@ -41,6 +42,7 @@ class StopAndWait:
         return self.tries < MAX_TRIES
     
     def send(self, file_path):
+        print('sending stop and wait')
         file_size = os.path.getsize(file_path)
 
         for data in read_file_data(self.file):
