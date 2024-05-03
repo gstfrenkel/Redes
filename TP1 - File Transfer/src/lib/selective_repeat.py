@@ -8,6 +8,7 @@ import os
 
 WINDOW_SIZE = 3
 TIMEOUT_TYPE = -1
+DELETION_TIMESTAMP = -1
 
 class SelectiveRepeat:
     def __init__(self, socket, address, file, seq_num):
@@ -19,11 +20,10 @@ class SelectiveRepeat:
         self.seq_num = seq_num
         self.base = seq_num
 
-        self.pendings_lock = Lock()
-        self.pendings = {}  # Set de ACKs (seqnum) con (Data, timestamp, tries, acknowledged)
-        self.pendings_len = 0
+        self.pendings = {}  # Set de ACKs (seqnum) con (Data, tries, acknowledged)
 
         self.requests = Queue()
+        self.timestamps = Queue()
 
         self.abort = False
         self.disconnected = False
@@ -43,9 +43,8 @@ class SelectiveRepeat:
             data_size = len(data)
 
             while not self.abort and not self.disconnected:
-                if self.base + WINDOW_SIZE >= self.seq_num:
-                    with self.pendings_lock:
-                        self.process_request()
+                if self.base + WINDOW_SIZE <= self.seq_num:
+                    self.process_request()
                     continue
 
                 type = DATA_TYPE
@@ -55,16 +54,12 @@ class SelectiveRepeat:
                 message = Message(type, self.seq_num, data).encode()
 
                 self.socket.sendto(message, self.address)
+                self.timestamps.put((self.seq_num, time.time()))
 
-                with self.pendings_lock:
-                    self.pendings[self.seq_num] = (message, time.time(), 0, False)
-                    self.seq_num += 1
+                self.pendings[self.seq_num] = (message, 0, False)
+                self.seq_num += 1
+
                 file_size -= data_size
-
-
-
-
-
 
         if not empty_file:
             thread_recv_acks.join()
@@ -77,15 +72,43 @@ class SelectiveRepeat:
     
     def process_request(self):
         (type, seq_num) = self.requests.get()
+        pending = self.pendings[seq_num]
 
         if type == TIMEOUT_TYPE:
-            if seq_num not in self.pendings:
+            if not pending or pending[2]:
                 return
-            self.socket.sendto(self.pendings[seq_num], self.address)
-            self.pendings[seq_num] = (self.pendings[0], )
+            if pending[1] + 1 >= MAX_TRIES:
+                self.abort = True
+                return
+            self.socket.sendto(pending[0], self.address)
+            self.timestamps.put((k, time.time()))
+            self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
+        elif type == ACK_TYPE:
+            if pending[2]:
+                return
+            self.pendings[seq_num] = (pending[0], 0, True)
+            if self.base != seq_num:
+                return
+            
+            self.update_base_seq_num()
+            for k in list(self.pendings.keys()):
+                if k < self.base:
+                    self.timestamps.put((k, DELETION_TIMESTAMP))
+                    del self.pendings[k]
 
+    def update_base_seq_num(self):
+        if len(self.pendings) == 1:
+            self.base += 1
+        
+        next_base = -1
+        for k, v in self.pendings.items():
+            if (next_base == -1 or k < next_base) and not v[2]:
+                next_base = k
 
+        if next_base == -1:
+            next_base = self.seq_num #message.seq_num + WINDOW_SIZE
 
+        self.base = next_base  
 
     def recv_acks(self):
         while not self.abort and not self.disconnected:
@@ -110,41 +133,23 @@ class SelectiveRepeat:
             self.requests.put((ACK_TYPE, message.seq_num))
         
     def check_timeouts(self):
+        timestamps = {}
+
         while not self.abort and not self.disconnected:
-            with self.pendings_lock:
-                for k, v in self.pendings.items():
-                    if time.time() - v[1] >= TIMEOUT:
-                        self.requests.put((TIMEOUT_TYPE, k))
+            try:
+                seq_num, timestamp = self.timestamps.get(False)
 
+                if timestamp != DELETION_TIMESTAMP:
+                    timestamps[seq_num] = timestamp
+                else:
+                    del timestamps[seq_num]
+            except Exception as _:
+                _
 
+            for k, v in timestamps.items():
+                if time.time() - v >= TIMEOUT:
+                    self.requests.put((TIMEOUT_TYPE, k))
 
-
-
-
-
-    def update_base_seq_num(self, message):
-        if self.base != message.seq_num:
-            return
-        
-        #print(f"\nEntró a update base con seq_num {message.seq_num}")
-
-        if len(self.pendings) == 1:
-            #print(f"Avanzó a {self.base + 1}")
-            self.base += 1
-            return
-        
-        next_base = -1
-        for k, v in self.pendings.items():
-            print(f"Pending: {k}: ({v[1]}, {v[3]})")
-            if (next_base == -1 or k < next_base) and not v[3]:
-                next_base = k
-
-        if next_base == -1:
-            next_base = self.seq_num #message.seq_num + WINDOW_SIZE
-
-        #print(f"Avanzó a {next_base}")
-        self.base = next_base
-    
     # receiver
     def receive(self, is_server):
         while not self.abort and self.tries < MAX_TRIES:
