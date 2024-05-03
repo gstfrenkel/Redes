@@ -1,8 +1,10 @@
-from socket import * 
-from lib.message import * 
+from socket import *
+from lib.message import *
+from lib.message import *
+# from lib.message import DATA_TYPE, LAST_DATA_TYPE, ACK_TYPE, HEADER_SIZE
 from lib.constants import MAX_MESSAGE_SIZE, MAX_TRIES, TIMEOUT
 from queue import Queue
-from threading import * 
+from threading import *
 import time
 import os
 
@@ -10,9 +12,15 @@ WINDOW_SIZE = 3
 TIMEOUT_TYPE = -1
 DELETION_TIMESTAMP = -1
 
+# Values for self.pendings set
+DATA = 0
+TRIES = 1
+ACKNOWLEDGED = 2
+
+
 class SelectiveRepeat:
-    def __init__(self, socket, address, file, seq_num):
-        self.socket = socket
+    def __init__(self, a_socket, address, file, seq_num):
+        self.socket = a_socket
         self.address = address
         self.file = file
         self.tries = 0
@@ -20,14 +28,15 @@ class SelectiveRepeat:
         self.seq_num = seq_num
         self.base = seq_num
 
-        self.pendings = {}  # Set de ACKs (seqnum) con (Data, tries, acknowledged)
+        # Set de ACKs (seqnum) con (Data, tries, acknowledged)
+        self.pendings = {}
 
         self.requests = Queue()
         self.timestamps = Queue()
 
         self.abort = False
         self.disconnected = False
-    
+
     # Sender
     def send(self, file_path):
         file_size = os.path.getsize(file_path)
@@ -70,29 +79,34 @@ class SelectiveRepeat:
             self.socket.sendto(Message.new_ack().encode(), self.address)
 
         return not self.abort, self.seq_num
-    
+
     def process_request(self):
         (type, seq_num) = self.requests.get()
         pending = self.pendings[seq_num]
 
         if type == TIMEOUT_TYPE:
-            if not pending or pending[2]:
+            if not pending or pending[ACKNOWLEDGED]:
                 return
-            if pending[1] + 1 >= MAX_TRIES:
+            if pending[TRIES] + 1 >= MAX_TRIES:
                 self.abort = True
                 return
-            self.socket.sendto(pending[0], self.address)
+            self.socket.sendto(pending[DATA], self.address)
             print(f"Sent timeout {seq_num}")
 
             self.timestamps.put((k, time.time()))
-            self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
+
+            data = pending[DATA]
+            tries = pending[TRIES] + 1
+            acnowledged = pending[ACKNOWLEDGED]
+
+            self.pendings[seq_num] = (data, tries, acnowledged)
         elif type == ACK_TYPE:
-            if pending[2]:
+            if pending[ACKNOWLEDGED]:
                 return
-            self.pendings[seq_num] = (pending[0], 0, True)
+            self.pendings[seq_num] = (pending[DATA], 0, True)
             if self.base != seq_num:
                 return
-            
+
             self.update_base_seq_num()
             for k in list(self.pendings.keys()):
                 if k < self.base:
@@ -102,16 +116,16 @@ class SelectiveRepeat:
     def update_base_seq_num(self):
         if not self.pendings[self.base+1]:
             self.base += 1
-        
+
         next_base = -1
         for k, v in self.pendings.items():
             if (next_base == -1 or k < next_base) and not v[2]:
                 next_base = k
 
         if next_base == -1:
-            next_base = self.seq_num #message.seq_num + WINDOW_SIZE
+            next_base = self.seq_num  # message.seq_num + WINDOW_SIZE
 
-        self.base = next_base  
+        self.base = next_base
 
     def recv_acks(self):
         while not self.abort and not self.disconnected:
@@ -122,7 +136,7 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
-                print(f"Timeout waiting for ACK package. Retrying...")
+                print("Timeout waiting for ACK package. Retrying...")
                 self.tries += 1
                 continue
 
@@ -134,7 +148,7 @@ class SelectiveRepeat:
                 break
 
             self.requests.put((ACK_TYPE, message.seq_num))
-        
+
     def check_timeouts(self):
         timestamps = {}
 
@@ -168,13 +182,17 @@ class SelectiveRepeat:
             print(f"Received {message.seq_num}")
 
             if is_server or not message.is_last_data_type():
-                self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
+                encoded_ack_msg = Message.new_ack(message.seq_num).encode()
+                self.socket.sendto(encoded_ack_msg, self.address)
             # Deberiamos mandar el ack del last data type y del disconnect
-            
-            if message.seq_num > self.seq_num + 1:      # Si llega un data posterior al que se necesita.
+
+            # Si llega un data posterior al que se necesita.
+            if message.seq_num > self.seq_num + 1:
                 self.pendings[message.seq_num] = message.data
                 continue
-            if message.seq_num != self.seq_num + 1:     # Si es un data repetido.
+
+            # Si es un data repetido.
+            if message.seq_num != self.seq_num + 1:
                 continue
 
             self.file.write(message.data)
@@ -184,10 +202,11 @@ class SelectiveRepeat:
             while self.seq_num in self.pendings:
                 self.file.write(self.pendings[self.seq_num])
                 self.abort = self.pendings[self.seq_num].is_last_data_type()
-                self.seq_num += 1      
-        
+                self.seq_num += 1
+
         return self.tries < MAX_TRIES
-      
+
+
 def read_file_data(file):
     while True:
         data = file.read(MAX_MESSAGE_SIZE - HEADER_SIZE)
