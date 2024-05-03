@@ -163,8 +163,10 @@ class SelectiveRepeat:
                 _
 
             for k, v in list(timestamps.items()):
+            for k, v in list(timestamps.items()):
                 if time.time() - v >= TIMEOUT:
                     self.requests.put((TIMEOUT_TYPE, k))
+                    del timestamps[k]
                     del timestamps[k]
 
     # receiver
