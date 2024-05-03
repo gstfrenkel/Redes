@@ -84,7 +84,7 @@ class SelectiveRepeat:
             self.socket.sendto(pending[0], self.address)
             print(f"Sent timeout {seq_num}")
 
-            self.timestamps.put((k, time.time()))
+            self.timestamps.put((seq_num, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
         elif type == ACK_TYPE:
             if pending[2]:
