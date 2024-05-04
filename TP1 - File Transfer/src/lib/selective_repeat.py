@@ -82,8 +82,9 @@ class SelectiveRepeat:
             thread_check_timeouts.join()
 
         if not self.abort and self.disconnected:
-            with self.lock:
-                self.socket.sendto(Message.new_ack().encode(), self.address)
+            if is_server:
+                with self.lock:
+                    self.socket.sendto(Message.new_ack().encode(), self.address)
 
         return not self.abort, self.seq_num
     
