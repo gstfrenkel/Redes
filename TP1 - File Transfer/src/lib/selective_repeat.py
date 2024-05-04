@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 3
+WINDOW_SIZE = 5
 TIMEOUT_TYPE = -1
 DELETION_TIMESTAMP = -1
 
@@ -52,7 +52,10 @@ class SelectiveRepeat:
                     type = LAST_DATA_TYPE
 
                 message = Message(type, self.seq_num, data).encode()
-
+                if type == DATA_TYPE:
+                    print(f"Sent {self.seq_num} with window {self.base}")
+                else:
+                    print(f"Sent last data {self.seq_num} with window {self.base}")
                 self.socket.sendto(message, self.address)
                 self.timestamps.put((self.seq_num, time.time()))
 
@@ -61,6 +64,9 @@ class SelectiveRepeat:
 
                 file_size -= data_size
                 break
+
+        while not self.abort and not self.disconnected:
+            self.process_request()
 
         if not empty_file:
             thread_recv_acks.join()
@@ -73,28 +79,34 @@ class SelectiveRepeat:
     
     def process_request(self):
         (type, seq_num) = self.requests.get()
-        pending = self.pendings[seq_num]
+        try:
+            pending = self.pendings[seq_num]
+        except Exception as _:
+            return
 
         if type == TIMEOUT_TYPE:
-            if not pending or pending[2]:
+            if pending[2]:
                 return
             if pending[1] + 1 >= MAX_TRIES:
                 self.abort = True
                 return
             self.socket.sendto(pending[0], self.address)
-            print(f"Sent timeout {seq_num}")
+            print(f"Resent {seq_num} with window {self.base}")
 
             self.timestamps.put((seq_num, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
         elif type == ACK_TYPE:
+            #print(f'llego ack de {seq_num} y fue ackeado?', pending[2])
             if pending[2]:
                 return
             self.pendings[seq_num] = (pending[0], 0, True)
+            print(f"Received {seq_num}")
             if self.base != seq_num:
                 return
             
             self.update_base_seq_num()
-            for k in list(self.pendings.keys()):
+
+            for k in self.pendings.copy().keys():
                 if k < self.base:
                     self.timestamps.put((k, DELETION_TIMESTAMP))
                     del self.pendings[k]
@@ -160,32 +172,33 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
-                print("Timeout")
+                print("Timeout when receiving")
                 self.tries += 1
                 continue
             self.tries = 0
             message = Message.decode(enc_msg)
 
-            print(f"Received {message.seq_num}")
+            print(f"Received {message.seq_num} while expecting {self.seq_num+1}")
 
             if is_server or not message.is_last_data_type():
                 self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
             # Deberiamos mandar el ack del last data type y del disconnect
             
             if message.seq_num > self.seq_num + 1:      # Si llega un data posterior al que se necesita.
-                self.pendings[message.seq_num] = message.data
+                self.pendings[message.seq_num] = message
                 continue
-            if message.seq_num != self.seq_num + 1:     # Si es un data repetido.
+            if message.seq_num < self.seq_num + 1:      # Si es un data repetido.
                 continue
 
             self.file.write(message.data)
             self.abort = message.is_last_data_type()
-            self.seq_num += 1
+            self.seq_num = message.seq_num
 
-            while self.seq_num in self.pendings:
-                self.file.write(self.pendings[self.seq_num])
-                self.abort = self.pendings[self.seq_num].is_last_data_type()
-                self.seq_num += 1      
+            while self.seq_num + 1 in self.pendings:
+                self.file.write(self.pendings[self.seq_num + 1].data)
+                self.abort = self.pendings[self.seq_num + 1].is_last_data_type()
+                del self.pendings[self.seq_num + 1]
+                self.seq_num += 1  
         
         return self.tries < MAX_TRIES
       

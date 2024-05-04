@@ -18,7 +18,7 @@ class Client:
         self.seq_num = 0
 
     def connect(self, message_type):
-        while self.tries < MAX_TRIES:
+        while self.tries < MAX_TRIES/2:
             print(f"Attempting to establish connection with server...")
             self.socket.sendto(Message.new_connect(message_type, self.file_name).encode(), self.address)
 
@@ -31,7 +31,7 @@ class Client:
                 self.tries += 1
                 continue
 
-        if self.tries >= MAX_TRIES:
+        if self.tries >= MAX_TRIES/2:
             print("Failed to establish connection with server.")
             return
         
