@@ -18,7 +18,6 @@ class ServerClient:
 
     def start(self, message):
         file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.storage_path + message.data.decode())
-        print('en el start', file_path)
         if message.is_upload_type():
             self.file = open(file_path, "wb+")
             self.download(message)
