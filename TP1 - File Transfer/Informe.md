@@ -101,7 +101,7 @@ A continuación detallaremos el funcionamiento del handshake para cada uno de lo
 
    - El cliente y el servidor continúan este intercambio de datos y ACK hasta que se completa la transferencia del archivo o hasta que ocurra un error.
 
-  **INSERTAR IMAGEN DEL FUNCIONAMIENTO**
+    ![1714709559265](image/Informe/1714709559265.png)
 
 Si hay pérdida de paquetes durante la transferencia de datos, el protocolo Stop-and-Wait manejaría esta situación de la siguiente manera:
 
@@ -117,15 +117,30 @@ Si hay pérdida de paquetes durante la transferencia de datos, el protocolo Stop
 
 Este protocolo maneja la pérdida de paquetes mediante la retransmisión de paquetes perdidos y el seguimiento de intentos para evitar la congestión de la red. Esto asegura que la transferencia de datos sea confiable incluso en entornos donde pueda haber pérdida de paquetes.
 
-    **INSERTAR IMAGEN DEL FUNCIONAMIENTO**
+![1714709709843](image/Informe/1714709709843.png)
+
+
+* **~~ESCRIBIR PARTE DE PÉRDIDA DE PAQUETE~~ **
+
+![1714709716588](image/Informe/1714709716588.png)
 
 ###### Selective Repeat
 
-    En esta sección se explicará la implementación realizada para selective repeat.
+    ~~En esta sección se explicará la implementación realizada para selective repeat.~~
+
+![1714709950584](image/Informe/1714709950584.png)
+
+* **~~ESCRIBIR PARTE DE PÉRDIDA DE ACK~~**
+
+![1714709999321](image/Informe/1714709999321.png)
+
+* **~~ESCRIBIR PARTE DE PÉRDIDA DE PAQUETE~~**
+
+![1714710022980](image/Informe/1714710022980.png)
 
 ### Cierre de conexión
 
-    En esta sección se explicará que se implementará para finalizar la conexión, NO con un Ctrl + C.
+    ~~En esta sección se explicará que se implementará para finalizar la conexión, NO con un Ctrl + C.~~
 
 ---
 
@@ -214,5 +229,6 @@ _En cambio, TCP se utiliza en escenarios donde la confiabilidad de la entrega es
 - Mantener consistencia en todos los protocolos para mantener separada la aplicación y la implementación de los protocolos.
 
 # Conclusión
+
 
 - En esta sección se explayará sobre la conclusión a lo largo del desarrollo del trabajo práctico.
