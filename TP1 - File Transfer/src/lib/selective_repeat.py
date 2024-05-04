@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 1
+WINDOW_SIZE = 10
 TIMEOUT_TYPE = -1
 DELETION_TIMESTAMP = -1
 
@@ -46,7 +46,7 @@ class SelectiveRepeat:
 
             while not self.abort and not self.disconnected:
                 if self.base + WINDOW_SIZE <= self.seq_num:     # Si la ventana está llena
-                    self.process_request(False)
+                    self.process_request()
                     continue
 
                 type = DATA_TYPE
@@ -68,7 +68,7 @@ class SelectiveRepeat:
                 break
 
         while not self.abort and not self.disconnected:
-            self.process_request(False)
+            self.process_request()
 
         if not empty_file:
             thread_recv_acks.join()
@@ -79,13 +79,11 @@ class SelectiveRepeat:
 
         return not self.abort, self.seq_num
     
-    def process_request(self, with_timeout):
+    def process_request(self):
         try:
-            (type, seq_num) = self.requests.get(with_timeout, TIMEOUT)
+            (type, seq_num, timestamp) = self.requests.get()
             pending = self.pendings[seq_num]
         except Exception as _:
-            if with_timeout:
-                self.disconnected = True
             return
 
         if type == TIMEOUT_TYPE:
@@ -95,7 +93,7 @@ class SelectiveRepeat:
                 self.abort = True
                 return
             self.socket.sendto(pending[0], self.address)
-            print(f"Resent {seq_num} with window {self.base}")
+            print(f"Resent {seq_num} with window {self.base} and timestamp {timestamp}")
 
             self.timestamps.put((seq_num, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
@@ -147,7 +145,7 @@ class SelectiveRepeat:
             if message.is_disconnect():
                 self.disconnected = True
             else:
-                self.requests.put((ACK_TYPE, message.seq_num))
+                self.requests.put((ACK_TYPE, message.seq_num, None))
         
     def check_timeouts(self):
         timestamps = {}
@@ -166,7 +164,7 @@ class SelectiveRepeat:
 
             for k, v in list(timestamps.items()):
                 if time.time() - v >= TIMEOUT:
-                    self.requests.put((TIMEOUT_TYPE, k))
+                    self.requests.put((TIMEOUT_TYPE, k, v))
                     del timestamps[k]
 
     # receiver
