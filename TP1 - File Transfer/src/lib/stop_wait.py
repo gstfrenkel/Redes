@@ -24,7 +24,7 @@ class StopAndWait:
                 continue
 
             message = Message.decode(enc_msg)
-            self.logger.print_msg(f'receive message {enc_msg}')
+            self.logger.print_msg(f"Received {message.seq_num}")
 
             if message.is_disconnect() and is_server:
                 self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
@@ -70,13 +70,13 @@ class StopAndWait:
                     self.tries = 0
                 except timeout:
                     self.tries += 1
-                    print(f"Timeout waiting for ACK package {self.seq_num}. Retrying...")
+                    self.logger.print_msg(f"Timeout waiting for ACK package {self.seq_num}. Retrying...")
                     continue
 
                 break
 
             if self.tries >= MAX_TRIES:
-                print(f"Failed to upload file.")
+                self.logger.print_msg(f"Failed to upload file.")
                 return False, self.seq_num
 
             self.seq_num += 1

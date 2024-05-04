@@ -62,7 +62,7 @@ class SelectiveRepeat:
                 if type == DATA_TYPE:
                     self.logger.print_msg(f"Sent {self.seq_num} with window {self.base}")
                 else:
-                    print(f"Sent last data {self.seq_num} with window {self.base}")
+                    self.logger.print_msg(f"Sent last data {self.seq_num} with window {self.base}")
                 with self.lock:
                     self.socket.sendto(message, self.address)
 
@@ -88,7 +88,6 @@ class SelectiveRepeat:
         return not self.abort, self.seq_num
     
     def process_request(self, is_server):
-    def process_request(self):
         try:
             (type, seq_num, timestamp) = self.requests.get()
             pending = self.pendings[seq_num]
@@ -104,7 +103,7 @@ class SelectiveRepeat:
 
             with self.lock:
                 self.socket.sendto(pending[0], self.address)
-            print(f"Resent {seq_num} with window {self.base} and timestamp {timestamp}")
+            self.logger.print_msg(f"Resent {seq_num} with window {self.base} and timestamp {timestamp}")
 
             self.timestamps.put((seq_num, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
@@ -125,6 +124,9 @@ class SelectiveRepeat:
                 if k < self.base:
                     self.timestamps.put((k, DELETION_TIMESTAMP))
                     del self.pendings[k]
+        elif type == END_TYPE and is_server:
+            self.socket.sendto(Message.new_ack().encode(), self.address)
+            self.disconnected = True
 
     def update_base_seq_num(self):
         if len(self.pendings) == 1:
@@ -199,11 +201,12 @@ class SelectiveRepeat:
         return self.tries < MAX_TRIES
     
     def process_data(self, is_server, message):     #Seq num = seqnum que espera para escribir
-        print(f"Received {message.seq_num} while expecting {self.seq_num}")
+        self.logger.print_msg(f"Received {message.seq_num} while expecting {self.seq_num}")
 
         if message.is_disconnect() and is_server:
-                self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
-                break
+            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
+            self.abort = True
+            return
         
         if is_server or not message.is_last_data_type():
             self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
