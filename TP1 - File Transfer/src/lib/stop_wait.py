@@ -4,7 +4,8 @@ from lib.message import *
 from socket import *
 
 class StopAndWait:
-    def __init__(self, socket, address, file, seq_num):
+    def __init__(self, socket, address, file, seq_num, logger):
+        self.logger = logger
         self.socket = socket
         self.address = address
         self.file = file
@@ -13,17 +14,17 @@ class StopAndWait:
 
     def receive(self, is_server, _):
         while self.tries < MAX_TRIES:
-            print('receive stop and wait')
             self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
-                print(f"Timeout waiting for data package {self.seq_num + 1}. Retrying...")
+                self.logger.print_msg(f"Timeout waiting for data package {self.seq_num + 1}. Retrying...")
                 self.tries += 1
                 continue
 
             message = Message.decode(enc_msg)
+            self.logger.print_msg(f'receive message {enc_msg}')
 
             if message.is_disconnect() and is_server:
                 self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
@@ -41,8 +42,7 @@ class StopAndWait:
 
         return self.tries < MAX_TRIES
     
-    def send(self, file_path):
-        print('sending stop and wait')
+    def send(self, file_path, _is_server):
         file_size = os.path.getsize(file_path)
 
         for data in read_file_data(self.file):
@@ -54,6 +54,7 @@ class StopAndWait:
                     type = LAST_DATA_TYPE
 
                 self.socket.sendto(Message(type, self.seq_num, data).encode(), self.address)
+                self.logger.print_msg(f'Sending message {self.seq_num}')
 
                 try:
                     encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)

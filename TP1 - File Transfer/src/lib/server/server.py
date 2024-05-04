@@ -4,15 +4,26 @@ from lib.message import *
 from lib.constants import MAX_MESSAGE_SIZE, TIMEOUT
 from lib.server.server_client import ServerClient
 from lib.server.exceptions import ServerParamsFailException
+from lib.command_parser import CommandParser
+from lib.logger import Logger
 
 
 class Server:
     def __init__(self, args):
         try:
-            address = args[args.index('-H') + 1]
-            port = args[args.index('-p') + 1]
-            storage_path = args[args.index('-s') + 1]
+            parser = CommandParser(args)
+            address, port, storage_path, should_be_verbose, show_description = parser.parse_command()
 
+            if show_description:
+                help()
+                return
+
+            if None in (address, port, storage_path):
+                print('\n\nError al inciar, revisar la descripcion del comando')
+                help()
+                return
+
+            self.logger = Logger(should_be_verbose)
             self.address = str(address)
             self.port = int(port)
 
@@ -37,7 +48,7 @@ class Server:
                 print(f"Failed to receive message: {e}")
 
     def handle_client_msg(self, address, message):
-        client = ServerClient(address)
+        client = ServerClient(address, self.logger)
         client.start(Message.decode(message))
 
 def help():

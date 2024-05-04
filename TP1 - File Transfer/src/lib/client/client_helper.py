@@ -17,7 +17,7 @@ def createClientAndUploadToServer(args):
         showUploadUsage()
         return 0
     
-    client = Client(address, port, src_path, file_name)
+    client = Client(address, port, src_path, file_name, should_be_verbose)
 
     if protocol == SW:
         message_type = UPLOAD_TYPE_SW
@@ -42,7 +42,7 @@ def createClientAndDownloadFromServer(args):
         showDownloadUsage()
         return 0  
 
-    client = Client(address, port, dest_path, file_name)
+    client = Client(address, port, dest_path, file_name, should_be_verbose)
 
     if protocol == SW:
         message_type = DOWNLOAD_TYPE_SW
