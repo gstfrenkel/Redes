@@ -19,21 +19,21 @@ class ServerClient:
     def start(self, message):
         if message.is_upload_type():
             self.file = open(message.data.decode(), "wb+")
-            self.download(message.type)
+            self.download(message)
         elif message.is_download_type():
             self.file = open(message.data.decode(), "rb")
             self.upload(message.data, message.type)
 
         self.disconnect()
 
-    def download(self, msg_type):
-        if msg_type == UPLOAD_TYPE_SW:
+    def download(self, message):
+        if message.type == UPLOAD_TYPE_SW:
             handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
         else:
             handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
             self.socket.sendto(Message.new_ack().encode(), self.address)
 
-        ok = handler.receive(True)
+        ok = handler.receive(True, message)
         if ok:
             print(f"Successfully uploaded file from {self.address[0]}:{self.address[1]}.")
         else:

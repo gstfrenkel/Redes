@@ -1,10 +1,12 @@
 local decode_msg_type = {
     [1] = 'UPLOAD',
     [2] = 'DOWNLOAD',
-    [3] = 'DATA_TYPE',
-    [4] = 'LAST_DATA_TYPE',
-    [5] = 'ACK_TYPE',
-    [6] = 'END_TYPE'
+    [3] = 'DOWNLOAD_TYPE_SW',
+    [4] = "DOWNLOAD_TYPE_SR",
+    [5] = 'DATA_TYPE',
+    [6] = 'LAST_DATA_TYPE',
+    [7] = 'ACK_TYPE',
+    [8] = 'END_TYPE'
 }
 
 local p_rdt_protocol_g_09 = Proto("rdt_protocol_g_09", "RDT G9")
@@ -41,4 +43,4 @@ function p_rdt_protocol_g_09.dissector(buf, pinfo, tree)
 end
 
 local udp_port = DissectorTable.get("udp.port")
-udp_port:add(6653, p_rdt_protocol_g_09)
+udp_port:add(12345, p_rdt_protocol_g_09)

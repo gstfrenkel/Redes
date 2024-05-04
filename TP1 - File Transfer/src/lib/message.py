@@ -7,14 +7,14 @@ DOWNLOAD_TYPE_SW = 3
 DOWNLOAD_TYPE_SR = 4
 
 # Data exchange
-DATA_TYPE = 3
-LAST_DATA_TYPE = 4
+DATA_TYPE = 5
+LAST_DATA_TYPE = 6
 
 # Validation
-ACK_TYPE = 5
+ACK_TYPE = 7
 
 # Disconnection
-END_TYPE = 6
+END_TYPE = 8
 
 # Message structure
 #   1  |    4    | ...
