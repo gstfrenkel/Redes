@@ -84,15 +84,16 @@ class Client:
 
     def download(self, message, protocol):
         file = open(self.src_path, "wb+")
-        file.write(message.data)
-        if message.is_last_data_type():
-            print("Successfully downloaded file.")
-            return
         
         if protocol == SW:
+            file.write(message.data)
+            if message.is_last_data_type():
+                print("Successfully downloaded file.")
+                return
+        
             handler = StopAndWait(self.socket, self.address, file, self.seq_num)
         else:
-            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num - 1)
+            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num)
 
         
         ok = handler.receive(False, message)

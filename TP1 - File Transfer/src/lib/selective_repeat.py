@@ -186,27 +186,27 @@ class SelectiveRepeat:
 
         return self.tries < MAX_TRIES
     
-    def process_data(self, is_server, message):
-        print(f"Received {message.seq_num} while expecting {self.seq_num+1}")
+    def process_data(self, is_server, message):     #Seq num = seqnum que espera para escribir
+        print(f"Received {message.seq_num} while expecting {self.seq_num}")
         self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
 
         if is_server or not message.is_last_data_type():
             self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
         
-        if message.seq_num > self.seq_num + 1:      # Si llega un data posterior al que se necesita.
+        if message.seq_num > self.seq_num:      # Si llega un data posterior al que se necesita.
             self.pendings[message.seq_num] = message
             return
-        if message.seq_num < self.seq_num + 1:      # Si es un data repetido.
+        if message.seq_num < self.seq_num:      # Si es un data repetido.
             return
 
         self.file.write(message.data)
         self.abort = message.is_last_data_type()
-        self.seq_num = message.seq_num
+        self.seq_num += 1
 
-        while self.seq_num + 1 in self.pendings:
-            self.file.write(self.pendings[self.seq_num + 1].data)
-            self.abort = self.pendings[self.seq_num + 1].is_last_data_type()
-            del self.pendings[self.seq_num + 1]
+        while self.seq_num in self.pendings:
+            self.file.write(self.pendings[self.seq_num].data)
+            self.abort = self.pendings[self.seq_num].is_last_data_type()
+            del self.pendings[self.seq_num]
             self.seq_num += 1
         
       
