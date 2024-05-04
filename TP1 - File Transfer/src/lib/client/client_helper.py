@@ -3,6 +3,7 @@ from lib.client.client import Client
 from lib.message import UPLOAD_TYPE_SR, UPLOAD_TYPE_SW, DOWNLOAD_TYPE_SR, DOWNLOAD_TYPE_SW
 from lib.command_parser import CommandParser
 from lib.constants import SW, SR
+import os
 
 def createClientAndUploadToServer(args):
     parser = CommandParser(args)
@@ -17,6 +18,14 @@ def createClientAndUploadToServer(args):
         showUploadUsage()
         return 0
     
+    try:
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), src_path)
+        file = open(file_path, "rb")
+        file.close()
+    except Exception:
+        print(f'No se encontro el archivo {file_path}')
+        return 0
+
     client = Client(address, port, src_path, file_name, should_be_verbose)
 
     if protocol == SW:
