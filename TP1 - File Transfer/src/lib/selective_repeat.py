@@ -39,12 +39,23 @@ class SelectiveRepeat:
             thread_recv_acks.start()
             thread_check_timeouts.start()
 
+        print("se manda data 1")
+        first_data = next(read_file_data(self.file))
+        first_message = Message(DATA_TYPE if file_size - len(first_data) > 0 else LAST_DATA_TYPE, self.seq_num, first_data) 
+        self.socket.sendto(first_message.encode(), self.address)
+        file_size -= len(first_data)
+        self.pendings[self.seq_num] = (first_message, 0, False)
+        self.seq_num += 1
+        self.process_request(True)
+
         for data in read_file_data(self.file):
             data_size = len(data)
+            if self.disconnected:
+                break
 
             while not self.abort and not self.disconnected:
                 if self.base + WINDOW_SIZE <= self.seq_num:     # Si la ventana está llena
-                    self.process_request()
+                    self.process_request(False)
                     continue
 
                 type = DATA_TYPE
@@ -66,7 +77,7 @@ class SelectiveRepeat:
                 break
 
         while not self.abort and not self.disconnected:
-            self.process_request()
+            self.process_request(False)
 
         if not empty_file:
             thread_recv_acks.join()
@@ -77,11 +88,13 @@ class SelectiveRepeat:
 
         return not self.abort, self.seq_num
     
-    def process_request(self):
-        (type, seq_num) = self.requests.get()
+    def process_request(self, with_timeout):
         try:
+            (type, seq_num) = self.requests.get(with_timeout, TIMEOUT)
             pending = self.pendings[seq_num]
         except Exception as _:
+            if with_timeout:
+                self.disconnected = True
             return
 
         if type == TIMEOUT_TYPE:
@@ -112,7 +125,7 @@ class SelectiveRepeat:
                     del self.pendings[k]
 
     def update_base_seq_num(self):
-        if not self.pendings[self.base+1]:
+        if len(self.pendings) == 1:
             self.base += 1
         
         next_base = -1
@@ -180,7 +193,10 @@ class SelectiveRepeat:
             print(f"Received {message.seq_num} while expecting {self.seq_num+1}")
 
             if is_server or not message.is_last_data_type():
+                print("data")
                 self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
+            elif message.is_last_data_type():
+                print("last_data")
             # Deberiamos mandar el ack del last data type y del disconnect
             
             if message.seq_num > self.seq_num + 1:      # Si llega un data posterior al que se necesita.

@@ -43,7 +43,6 @@ class ServerClient:
     def upload(self, file_path, msg_type):
         self.seq_num += 1
         if msg_type == DOWNLOAD_TYPE_SW:
-            print('upload')
             handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
         else:
             handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)

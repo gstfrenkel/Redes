@@ -18,20 +18,21 @@ class Client:
         self.seq_num = 0
 
     def connect(self, message_type):
-        while self.tries < MAX_TRIES/2:
+        while self.tries < MAX_TRIES:
             print(f"Attempting to establish connection with server...")
             self.socket.sendto(Message.new_connect(message_type, self.file_name).encode(), self.address)
 
             try:
                 encoded_msg, address = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 message = Message.decode(encoded_msg)
+                print("Llega el seqnum", message.seq_num)
                 self.seq_num += 1
                 break
             except timeout:
                 self.tries += 1
                 continue
 
-        if self.tries >= MAX_TRIES/2:
+        if self.tries >= MAX_TRIES:
             print("Failed to establish connection with server.")
             return
         
@@ -83,7 +84,6 @@ class Client:
 
 
     def download(self, message, protocol):
-        print('protocol',protocol)
         file = open(self.src_path, "wb+")
         file.write(message.data)
         if message.is_last_data_type():
@@ -93,7 +93,8 @@ class Client:
         if protocol == SW:
             handler = StopAndWait(self.socket, self.address, file, self.seq_num)
         else:
-            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num) 
+            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num)
+            print("Manda el seqnum", message.seq_num)
             self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
 
         
