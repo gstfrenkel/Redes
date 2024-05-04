@@ -25,7 +25,6 @@ class Client:
             try:
                 encoded_msg, address = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 message = Message.decode(encoded_msg)
-                print("Llega el seqnum", message.seq_num)
                 self.seq_num += 1
                 break
             except timeout:
@@ -93,12 +92,10 @@ class Client:
         if protocol == SW:
             handler = StopAndWait(self.socket, self.address, file, self.seq_num)
         else:
-            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num)
-            print("Manda el seqnum", message.seq_num)
-            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
+            handler = SelectiveRepeat(self.socket, self.address, file, self.seq_num - 1)
 
         
-        ok = handler.receive(False)
+        ok = handler.receive(False, message)
         if ok:
             print("Successfully downloaded file.")
         else:
