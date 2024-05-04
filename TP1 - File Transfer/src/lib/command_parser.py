@@ -44,16 +44,15 @@ class CommandParser:
   
   def parse_start_server(self):
     if '-h' in self.args:
-      return None, None, None, None, None, True
+      return None, None, None, None, True
 
     address =  self.parse_argument('-H', '--host')
     port = self.parse_argument('-p', '--port')
     storage_path = self.parse_argument('-s', '--storage')
-    file_name = self.parse_argument('-n', '--name')
 
     should_be_verbose = self.check_if_verbose()
 
-    return address, port, storage_path, file_name, should_be_verbose, False
+    return address, port, storage_path, should_be_verbose, False
   
 
   def parse_argument(self, first_option, second_option, default = None):

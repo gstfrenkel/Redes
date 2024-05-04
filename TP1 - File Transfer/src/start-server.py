@@ -5,11 +5,7 @@ from lib.server.exceptions import ServerParamsFailException
 
 def main(args):
     try:
-        useFullArgs = args[1:]
-        if '-h' in useFullArgs:
-            help()
-        else:
-            Server(useFullArgs)
+        Server(args)
 
     except KeyboardInterrupt as e:
         print(e)
