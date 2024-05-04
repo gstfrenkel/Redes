@@ -172,7 +172,7 @@ Este protocolo maneja la pérdida de paquetes mediante la retransmisión de paqu
 
 # Análisis
 
-~~En esta sección se mostrará un análisis de mediciones utilizando Upload y Download para ambos protocolos con pérdida de paquetes y sin pérdida.~~
+En esta sección se mostrará un análisis de mediciones utilizando Upload y Download para ambos protocolos con pérdida de paquetes y sin pérdida.
 
 # Preguntas a responder
 
@@ -230,4 +230,5 @@ _En cambio, TCP se utiliza en escenarios donde la confiabilidad de la entrega es
 
 # Conclusión
 
-~~En esta sección se explayará sobre la conclusión a lo largo del desarrollo del trabajo práctico.~~
+
+- En esta sección se explayará sobre la conclusión a lo largo del desarrollo del trabajo práctico.

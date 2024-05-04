@@ -3,16 +3,35 @@ from threading import *
 from lib.message import * 
 from lib.constants import MAX_MESSAGE_SIZE, TIMEOUT
 from lib.server.server_client import ServerClient
+from lib.server.exceptions import ServerParamsFailException
+from lib.command_parser import CommandParser
+from lib.logger import Logger
+import os
+
 
 class Server:
     def __init__(self, args):
-        address =  args[args.index('-H') + 1]
-        port = args[args.index('-p') + 1]
+        try:
+            parser = CommandParser(args)
+            address, port, storage_path, should_be_verbose, show_description = parser.parse_command()
 
-        self.address = str(address)
-        self.port = int(port)
+            if show_description:
+                help()
+                return
 
-        self.start()
+            if None in (address, port, storage_path):
+                print('\n\nError al inciar, revisar la descripcion del comando')
+                help()
+                return
+
+            self.logger = Logger(should_be_verbose)
+            self.address = str(address)
+            self.port = int(port)
+            self.storage_path = storage_path
+
+            self.start()
+        except ValueError:
+            raise ServerParamsFailException
 
     def start(self):
         serverSocket = socket(AF_INET, SOCK_DGRAM)
@@ -25,13 +44,23 @@ class Server:
             try:
                 message, address = serverSocket.recvfrom(MAX_MESSAGE_SIZE)
 
+                decoded_msg = Message.decode(message)
+                if decoded_msg.is_download_type():
+                    try:
+                        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.storage_path + decoded_msg.data.decode())
+                        file = open(file_path, "rb")
+                        file.close()
+                    except Exception:
+                        print(f'No se encontro el archivo {os.path.join(os.path.dirname(os.path.abspath(__file__)), self.storage_path + decoded_msg.data.decode())}')
+                        continue
+
                 client = Thread(target=self.handle_client_msg, args=(address, message))
                 client.start()
             except Exception as e:
                 print(f"Failed to receive message: {e}")
 
     def handle_client_msg(self, address, message):
-        client = ServerClient(address)
+        client = ServerClient(address, self.logger, self.storage_path)
         client.start(Message.decode(message))
 
 def help():
