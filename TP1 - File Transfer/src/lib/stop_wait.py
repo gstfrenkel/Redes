@@ -12,7 +12,7 @@ class StopAndWait:
         self.tries = 0
         self.seq_num = seq_num
 
-    def receive(self, is_server):
+    def receive(self, is_server, _):
         while self.tries < MAX_TRIES:
             self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 

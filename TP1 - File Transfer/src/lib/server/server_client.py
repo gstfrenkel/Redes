@@ -8,7 +8,6 @@ from lib.selective_repeat import *
 class ServerClient:
     def __init__(self, address, logger):
         cli_socket = socket(AF_INET, SOCK_DGRAM)
-        #cli_socket.settimeout(TIMEOUT)
         self.logger = logger
         self.socket = cli_socket
         self.address = address
@@ -21,7 +20,6 @@ class ServerClient:
             self.file = open(message.data.decode(), "wb+")
             self.download(message.type)
         elif message.is_download_type():
-            print('llega una mensaje de download')
             self.file = open(message.data.decode(), "rb")
             self.upload(message.data, message.type)
 
@@ -46,8 +44,6 @@ class ServerClient:
             handler = StopAndWait(self.socket, self.address, self.file, self.seq_num, self.logger)
         else:
             handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num, self.logger)
-
-
 
         ok, self.seq_num = handler.send(file_path, True)
 
