@@ -6,10 +6,9 @@ import os
 from lib.selective_repeat import *
 
 class ServerClient:
-    def __init__(self, address):
+    def __init__(self, address, logger):
         cli_socket = socket(AF_INET, SOCK_DGRAM)
-        #cli_socket.settimeout(TIMEOUT)
-
+        self.logger = logger
         self.socket = cli_socket
         self.address = address
         self.file = None
@@ -28,25 +27,25 @@ class ServerClient:
 
     def download(self, message):
         if message.type == UPLOAD_TYPE_SW:
-            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
+            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num, self.logger)
         else:
-            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
+            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num, self.logger)
             self.socket.sendto(Message.new_ack().encode(), self.address)
 
         ok = handler.receive(True, message)
         if ok:
-            print(f"Successfully uploaded file from {self.address[0]}:{self.address[1]}.")
+            self.logger.print_msg(f"Successfully uploaded file from {self.address[0]}:{self.address[1]}.")
         else:
-            print(f"Failed to upload file from {self.address[0]}:{self.address[1]}.")
+            self.logger.print_msg(f"Failed to upload file from {self.address[0]}:{self.address[1]}.")
                 
     def upload(self, file_path, msg_type):
         self.seq_num += 1
         if msg_type == DOWNLOAD_TYPE_SW:
-            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num)
+            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num, self.logger)
         else:
-            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num)
+            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num, self.logger)
 
-        ok, self.seq_num = handler.send(file_path)
+        ok, self.seq_num = handler.send(file_path, True)
 
         while self.seq_num <= 1 and self.tries < MAX_TRIES:
             self.socket.sendto(Message(LAST_DATA_TYPE, self.seq_num, "").encode(), self.address)
@@ -61,13 +60,13 @@ class ServerClient:
                 self.tries += 1
 
         if ok and self.tries < MAX_TRIES:
-            print(f"Successfully uploaded file to {self.address[0]}:{self.address[1]}.")
+            self.logger.print_msg(f"Successfully uploaded file to {self.address[0]}:{self.address[1]}.")
         else:
-            print(f"Failed to upload file to {self.address[0]}:{self.address[1]}.")
+            self.logger.print_msg(f"Failed to upload file to {self.address[0]}:{self.address[1]}.")
 
     def disconnect(self):
         if self.file:
             self.file.close()
         self.socket.close()
-        print(f"Successfully disconnected from {self.address[0]}:{self.address[1]}.")
+        self.logger.print_msg(f"Successfully disconnected from {self.address[0]}:{self.address[1]}.")
             
