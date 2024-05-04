@@ -20,6 +20,8 @@ class SelectiveRepeat:
         self.seq_num = seq_num
         self.base = seq_num
 
+        self.lock = Lock()
+
         self.pendings = {}  # Set de ACKs (seqnum) con (Data, tries, acknowledged)
 
         self.requests = Queue()
@@ -58,7 +60,9 @@ class SelectiveRepeat:
                     print(f"Sent {self.seq_num} with window {self.base}")
                 else:
                     print(f"Sent last data {self.seq_num} with window {self.base}")
-                self.socket.sendto(message, self.address)
+                with self.lock:
+                    self.socket.sendto(message, self.address)
+
                 self.timestamps.put((self.seq_num, time.time()))
 
                 self.pendings[self.seq_num] = (message, 0, False)
@@ -75,7 +79,8 @@ class SelectiveRepeat:
             thread_check_timeouts.join()
 
         if not self.abort and self.disconnected:
-            self.socket.sendto(Message.new_ack().encode(), self.address)
+            with self.lock:
+                self.socket.sendto(Message.new_ack().encode(), self.address)
 
         return not self.abort, self.seq_num
     
@@ -92,7 +97,9 @@ class SelectiveRepeat:
             if pending[1] + 1 >= MAX_TRIES:
                 self.abort = True
                 return
-            self.socket.sendto(pending[0], self.address)
+
+            with self.lock:
+                self.socket.sendto(pending[0], self.address)
             print(f"Resent {seq_num} with window {self.base} and timestamp {timestamp}")
 
             self.timestamps.put((seq_num, time.time()))
@@ -186,7 +193,6 @@ class SelectiveRepeat:
     
     def process_data(self, is_server, message):     #Seq num = seqnum que espera para escribir
         print(f"Received {message.seq_num} while expecting {self.seq_num}")
-        self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
 
         if is_server or not message.is_last_data_type():
             self.socket.sendto(Message.new_ack(message.seq_num).encode(), self.address)
