@@ -218,6 +218,10 @@ class SelectiveRepeat:
         if message.seq_num < self.seq_num:      # Si es un data repetido.
             return
 
+        if message.data == 0:
+            self.seq_num += 1
+            return
+
         self.file.write(message.data)
         self.abort = message.is_last_data_type() and not is_server
         self.seq_num += 1

@@ -27,7 +27,7 @@ class Server:
             self.logger = Logger(should_be_verbose)
             self.address = str(address)
             self.port = int(port)
-            self.storage_path = storage_path
+            self.storage_path = storage_path if storage_path[len(storage_path) - 1] == '/' else storage_path + '/'
 
             self.start()
         except ValueError:
