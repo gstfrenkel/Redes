@@ -240,7 +240,7 @@ A continuación veremos las mediciones de tiempo realizadas para ambos protocolo
 | 10%   | 2.025   | 1.159 |
 | 15%   | 2.396   | 3.790|
 
-*Insertar Grafico de 50KB*
+![arch_50kb](image/Informe/arch_50kb.png)
 
 **Archivo 100KB**
 
@@ -251,7 +251,7 @@ A continuación veremos las mediciones de tiempo realizadas para ambos protocolo
 | 10%   | 3.754   | 5.673 |
 | 15%   | 4.457   | 7.032|
 
-*Insertar Grafico de 100KB*
+![arch_100kb](image/Informe/arch_100kb.png)
 
 **Archivo 200KB**
 
@@ -262,7 +262,8 @@ A continuación veremos las mediciones de tiempo realizadas para ambos protocolo
 | 10%   | 7.082   | 10.539 |
 | 15%   | 7.559   | 14.635|
 
-*Insertar Grafico de 200KB*
+![arch_200kb](image/Informe/arch_200kb.png)
+
 
 # Preguntas a responder
 
