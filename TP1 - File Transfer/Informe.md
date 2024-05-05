@@ -1,6 +1,12 @@
 # Introducción
 
-Este trabajo práctico tiene como objetivo crear una aplicación de red para transferir archivos entre cliente y servidor. Se implementarán dos operaciones fundamentales: UPLOAD (enviar archivos del cliente al servidor) y DOWNLOAD (descargar archivos del servidor al cliente). Se tendrán en cuenta los protocolos TCP y UDP para la comunicación. TCP ofrece un servicio confiable orientado a la conexión, mientras que UDP es sin conexión y menos confiable. Se implementarán versiones de UDP con protocolo Stop & Wait y Selective Repeat con el objetivo de lograr una transferencia confiable al utilizar el protocolo.
+Este trabajo práctico tiene como objetivo crear una aplicación de red para transferir archivos entre cliente y servidor. Se implementarán dos operaciones fundamentales: 
+- UPLOAD (enviar archivos del cliente al servidor)
+- DOWNLOAD (descargar archivos del servidor al cliente).
+
+ Se tendrán en cuenta los protocolos TCP y UDP para la comunicación. 
+ 
+ TCP ofrece un servicio confiable orientado a la conexión, mientras que UDP es sin conexión y menos confiable. Se implementarán versiones de UDP con protocolo Stop & Wait y Selective Repeat con el objetivo de lograr una transferencia confiable al utilizar el protocolo.
 
 # Hipótesis y suposiciones realizadas
 
@@ -21,7 +27,7 @@ La funcionalidad del cliente se divide en dos aplicaciones de línea de comandos
 
 El comando `upload` envía un archivo al servidor para ser guardado con el nombre asignado.
 
-`python3 upload.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-s FILEPATH] [-n FILENAME]` **faltaría ver como pasarle el protocolo que quiero.**
+`python3 upload.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-s FILEPATH] [-n FILENAME] [-sw | -sr]`
 
 Donde cada flag indica:
 
@@ -32,6 +38,8 @@ Donde cada flag indica:
 - `p, --port`: Indica el puerto.
 - `-s, --src`: Indica el path del archivo a subir.
 - `-n, --name`: Nombre del archivo a subir.
+- `-sw`: Ejecuta el comando con el comportamiento de Stop and Wait.
+- `-sr`: Ejecuta el comando con el comportamiento de Selective Repeat.
 
 En la implementación, esta operación sigue los siguientes pasos:
 
@@ -43,9 +51,9 @@ En la implementación, esta operación sigue los siguientes pasos:
 
 El comando `download` descarga un archivo especificado desde el servidor.
 
-`python3 download.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME] [-P PROTOCOL]`
+`python3 download.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME] [-sw | -sr] `
 
-Donde todos los flags indican lo mismo que con el comando anterior, con la diferencia de `-d, --dst` que indica el path de destino del archivo a descargar.
+Donde todos los flags indican lo mismo que con el comando anterior, con la diferencia de `-d, --dst` que indica el path de destino del archivo a descargar. Además con el flag `-n` indicamos cual es el nombre del archivo a descargar del servidor.
 
 En nuestra implementación, sin importar el protocolo, esta operación sigue los siguientes pasos:
 
@@ -68,7 +76,9 @@ Donde los flags indican:
 - `-p/--port`: Indica el puerto
 - `-s/--storage`: El path en el que se almacenan los archivos.
 
-El servidor va a proveer el servicio de subida y bajada de archivos. Para ello seguirá los siguientes pasos:
+El servidor va a proveer el servicio de subida y bajada de archivos. 
+
+Para ello seguirá los siguientes pasos:
 
 Cuando el servidor recibe el comando "start-server", crea un nuevo servidor y comienza a escuchar en el puerto especificado para nuevas conexiones entrantes. Una vez que el servidor está creado y escuchando, permanece a la espera de una conexion.
 Cuando se establece una nueva conexión, el servidor acepta la conexión y crea un nuevo hilo para manejarla. Esto permite al servidor seguir esperando nuevas conexiones mientras maneja la conexión actual en un hilo separado. Este enfoque de subprocesos múltiples asegura que el servidor pueda manejar múltiples conexiones simultáneamente.
@@ -168,33 +178,58 @@ Este protocolo maneja la pérdida de paquetes mediante la retransmisión de paqu
 
 # Pruebas
 
-- Para probar la pérdida de paquetes hicimos uso de Mininet, para esto creamos una topología de cuatro Host y un Router ( `topology.py`), donde podemos probar pérdida de paquetes de ambos lados de la conexión, y la conexión de múltiples clientes a un mismo servidor. Para ello debemos ejecutar los siguientes comandos:
+## Mininet
 
-  ```
-    sudo python3 topology.py    #Ejecuta mininet con la topologìa creada por nosotros.
+- Para probar la pérdida de paquetes hicimos uso de Mininet, para esto creamos una topología de tres Host y un Router, donde podemos probar pérdida de paquetes de ambos lados de la conexión, y la conexión de múltiples clientes a un mismo servidor. Para ello debemos ejecutar los siguientes pasos:
 
-    link s1 h1 up   #Establece la conexión entre el switch y el host y la pone en estado activo.
+1. Tener instalado mininet. [ver](https://mininet.org/download/)
 
-    link s1 h2 up   #Establece la conexión entre el switch y el cliente y la pone en estado activo (Ejecutar para todos los clientes que quisieramos probar).
+2. Ejecutar el siguiente comando para establecer la topología anteriomente mencionada:
 
-    s1 tc qdisc add dev s1-eth2 root netem loss 10%    #Establece perdida de paquetes del 10% para el switch s1 salida eth2.
+```
+sudo mn --topo single,3
+```
 
-    s1 tc qdisc del dev s1-eth2 root netem loss 10%    #Elimina la regla establecida para la pèrdida de paquetes.
+3. Establecemos la pérdida de paquetes en todos los host. En este caso h1, h2 y h3:
 
-    xterm h1   #Abre una ventana de terminal gráfica para el host h1 donde podemos iniciar el servidor.
+```
+s1 tc qdisc add dev s1-eth1 root netem loss 10%
+```
 
-    xterm h2   #Abre una ventana de terminal gráfica para el cliente donde podemos iniciar, por ejemplo, el cliente 1.
+**Nota**: análogamente ejecutamos el comando para eth2 y eth3.
 
-  ```
-- Para constatar que los mensajes de nuestro protocolo son como exactamente se describen en este informe, deberíamos capturar paquetes con Wireshark, por lo que creamos un plugin que parsea los bytes de los mensajes de la capa de aplicación a los campos de nuestro protocolo (Ver nombre de archivo). Para probarlo debemos seguir los sigueintes pasos:
+4. abrimos las terminales para c/u de los host, incluyendo el servidor:
 
-  1. Dentro de Wireshark ir a Ayuda -> Acerca de Wireshark -> Carpetas
-  2. Clickear en el item Complementos personales de Lua.
-  3. Copiar y pegar el disector en esa carpeta y ya Wireshark lo utilizará en las proximas capturas a realizar.
+```
+xterm h1
+```
+**Nota**: análogamente abrimos terminales para h2 y h3.
+
+5. Levantamos el servidor y probamos los comandos upload u download.
+
+
+## Wireshark
+
+Para constatar que los mensajes de nuestro protocolo son como exactamente se describen en este informe, se pueden capturar paquetes con Wireshark, por lo que creamos un plugin que parsea los bytes de los mensajes de la capa de aplicación a los campos de nuestro protocolo (dissector.lua). 
+
+Para probarlo debemos seguir los sigueintes pasos:
+
+1. Instalar la versión del lenguaje [lua](https://www.lua.org/download.html) que sea compatible con tu versión de wireshark. [ver](https://www.wireshark.org/docs/wsdg_html_chunked/wsluarm.html)
+
+
+2. Ubicarse en el directorio donde está ubicado el <dissector>.lua y abrir wireshark con el comando:
+
+```
+wireshark -X lua_script:dissector.lua
+```
+
+3. Elegimos capturar mensajes con 'any' y filtramos wireshark por el protocolo: en nuestro caso, `rdt_protocol_g_09`
+
+4. Enviamos paquetes a través de nuestro protocolo (ver sección Ejemplos de uso).
 
 # Análisis
 
-A continuación veremos las mediciones realizadas para ambos protocolos teniendo en cuenta, distintos tamaños de archivos y diferentes porcentajes de pérdida de paquetes.
+A continuación veremos las mediciones de tiempo realizadas para ambos protocolos teniendo en cuenta, distintos tamaños de archivos y diferentes porcentajes de pérdida de paquetes.
 
 **Archivo 50KB**
 
@@ -231,24 +266,26 @@ A continuación veremos las mediciones realizadas para ambos protocolos teniendo
 
 # Preguntas a responder
 
-> ###### Describa la arquitectura Cliente-Servidor.
+_**Describa la arquitectura Cliente-Servidor.**_
 
-_En la arquitectura cliente-servidor, un host permanece siempre activo como servidor para atender las solicitudes de otros hosts, denominados clientes. Los clientes no pueden comunicarse directamente entre sí. Para que un cliente se comunique con el servidor, este último posee una dirección fija y conocida llamada dirección IP. Sin embargo, el servidor no tiene previamente conocimiento de las direcciones de los clientes._
+En la arquitectura cliente-servidor, un host permanece siempre activo como servidor para atender las solicitudes de otros hosts, denominados clientes. Los clientes no pueden comunicarse directamente entre sí. Para que un cliente se comunique con el servidor, este último posee una dirección fija y conocida llamada dirección IP. Sin embargo, el servidor no tiene previamente conocimiento de las direcciones de los clientes.
 
-> ###### ¿Cuál es la función de un protocolo de capa de aplicación?
+_**¿Cuál es la función de un protocolo de capa de aplicación?**_
 
-_Un protocolo de capa de aplicación establece cómo se comunican los procesos de aplicaciones que se ejecutan en diferentes sistemas finales. Esto implica definir:_
-   _- Tipos de mensaje: Los mensajes pueden ser de solicitud o de respuesta. Las solicitudes son enviadas por el cliente al servidor para solicitar algún servicio o información, mientras que las respuestas son enviadas por el servidor al cliente en respuesta a una solicitud._
-   _- Campos de mensaje y su significado: Cada tipo de mensaje tiene campos específicos que contienen información relevante para la comunicación. El significado de cada campo se establece en la especificación del protocolo y puede variar según el contexto de la aplicación._
-   _- Reglas para enviar y responder mensajes: El protocolo define reglas para determinar cuándo y cómo un proceso envía y responde mensajes. Esto incluye aspectos como el establecimiento de conexiones, el formato de los mensajes, el manejo de errores y el cierre de la comunicación._
+Un protocolo de capa de aplicación establece cómo se comunican los procesos de aplicaciones que se ejecutan en diferentes sistemas finales. 
 
-> ###### Detalle el protocolo de aplicación desarrollado en este trabajo._
+Esto implica definir:
+   - **Tipos de mensaje**: Los mensajes pueden ser de solicitud o de respuesta. Las solicitudes son enviadas por el cliente al servidor para solicitar algún servicio o información, mientras que las respuestas son enviadas por el servidor al cliente en respuesta a una solicitud.
+   - **Campos de mensaje y su significado**: Cada tipo de mensaje tiene campos específicos que contienen información relevante para la comunicación. El significado de cada campo se establece en la especificación del protocolo y puede variar según el contexto de la aplicación.
+   - **Reglas para enviar y responder mensajes**: El protocolo define reglas para determinar cuándo y cómo un proceso envía y responde mensajes. Esto incluye aspectos como el establecimiento de conexiones, el formato de los mensajes, el manejo de errores y el cierre de la comunicación.
 
-_Se explicó en el item Implementación._
+ _**Detalle el protocolo de aplicación desarrollado en este trabajo.**_
 
-> ###### La capa de transporte del stack TCP/IP ofrece dos protocolos: TCP y UDP. ¿Qué servicios proveen dichos protocolos? ¿Cuáles son sus características? ¿Cuándo es apropiado utilizar cada uno?
+Se explicó en el item Implementación.
 
-_La capa de transporte en el stack TCP/IP tiene como objetivo principal proporcionar un servicio de entrega confiable de datos de la capa de red a la capa de aplicación. En este contexto, se encuentran dos protocolos principales: UDP (User Datagram Protocol) y TCP (Transmission Control Protocol), cada uno con sus características y servicios específicos._
+_**La capa de transporte del stack TCP/IP ofrece dos protocolos: TCP y UDP. ¿Qué servicios proveen dichos protocolos? ¿Cuáles son sus características? ¿Cuándo es apropiado utilizar cada uno?**_
+
+La capa de transporte en el stack TCP/IP tiene como objetivo principal proporcionar un servicio de entrega confiable de datos de la capa de red a la capa de aplicación. En este contexto, se encuentran dos protocolos principales: UDP (User Datagram Protocol) y TCP (Transmission Control Protocol), cada uno con sus características y servicios específicos.
 
 ### TCP: Transmission Control Protocol
 
@@ -275,15 +312,17 @@ _La capa de transporte en el stack TCP/IP tiene como objetivo principal proporci
   - Ofrece la entrega de datos de proceso a proceso.
   - Realiza un chequeo de errores e integridad utilizando un campo de detección de errores (checksum) en los encabezados._
 
-_UDP se prefiere en casos donde la velocidad de entrega es prioritaria sobre la confiabilidad de los datos. Esto se observa en aplicaciones como streaming multimedia, telefonía por internet y juegos en línea, donde la inmediatez es esencial y la pérdida ocasional de paquetes no afecta significativamente la experiencia del usuario._
+UDP se prefiere en casos donde la velocidad de entrega es prioritaria sobre la confiabilidad de los datos. Esto se observa en aplicaciones como streaming multimedia, telefonía por internet y juegos en línea, donde la inmediatez es esencial y la pérdida ocasional de paquetes no afecta significativamente la experiencia del usuario.
 
-_En cambio, TCP se utiliza en escenarios donde la confiabilidad de la entrega es crucial. Aplicaciones como el correo electrónico, la web y la transferencia de archivos requieren una garantía de que los datos llegarán correctamente y en el orden adecuado, TCP es la elección preferida._
+En cambio, TCP se utiliza en escenarios donde la confiabilidad de la entrega es crucial. Aplicaciones como el correo electrónico, la web y la transferencia de archivos requieren una garantía de que los datos llegarán correctamente y en el orden adecuado, TCP es la elección preferida.
 
 # Dificultades encontradas
 
 - Mantener consistencia en todos los protocolos para mantener separada la aplicación y la implementación de los protocolos.
+- Hacer un correcto manejo en casos de pérdida de paquetes para ambos protocolos implementados.
 - Definición los valores de los timeout, dado que dependiendo de los tamaños de archivo podían quedar cortos.
 - Definir los campos necesarios en los mensajes con el fin de realizar una buena comunicación entre cliente y servidor.
+
 
 # Conclusión
 
