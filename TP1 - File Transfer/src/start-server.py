@@ -1,5 +1,5 @@
 import sys
-from lib.server.server import *
+from lib.server.server import Server
 from lib.server.exceptions import ServerParamsFailException
 
 
@@ -12,7 +12,7 @@ def main(args):
         print("\nExiting...")
         sys.exit(0)
     except ServerParamsFailException:
-        print("Error: Some of param/s was not included. please see pyhton3 start-server -h")
+        print("Error: Some of param/s was not included.")
         sys.exit(0)
 
 
