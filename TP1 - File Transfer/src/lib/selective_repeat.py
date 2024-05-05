@@ -218,7 +218,7 @@ class SelectiveRepeat:
         if message.seq_num < self.seq_num:      # Si es un data repetido.
             return
 
-        if message.data == 0:
+        if message.seq_num == 0:  # Para que no escriba de más al principio
             self.seq_num += 1
             return
 
