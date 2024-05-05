@@ -6,17 +6,17 @@ class Logger:
         if self.show_msgs:
             print(msg)
 
-    def print_received_while_expecting_sr(msg_seq_num, sr_seq_num):
+    def received_expecting_sr_msg(self, msg_seq_num, sr_seq_num):
         print(f"Received {msg_seq_num} while expecting {sr_seq_num}")
 
-    def print_timeout_msg():
+    def timeout_msg(self):
         print("Timeout waiting for ACK package. Retrying...")
 
-    def print_resend_msg_sr(seq_num, base, timestamp):
+    def resend_sr_msg(self, seq_num, base, timestamp):
         print(f"Resent {seq_num} with window {base} and timestamp {timestamp}")
 
-    def send_with_sr_msg(seq_num, base):
+    def send_with_sr_msg(self, seq_num, base):
         print(f"Sent {seq_num} with window {base}")
 
-    def send_last_data_with_sr_msg(seq_num, base):
+    def send_last_data_with_sr_msg(self, seq_num, base):
         print(f"Sent last data {seq_num} with window {base}")

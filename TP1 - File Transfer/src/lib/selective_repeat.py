@@ -66,11 +66,11 @@ class SelectiveRepeat:
                 if type == DATA_TYPE:
                     seq_num = self.seq_num
                     base = self.base
-                    self.logger.sent_with_sr_msg(seq_num, base)
+                    self.logger.send_with_sr_msg(seq_num, base)
                 else:
                     seq_num = self.seq_num
                     base = self.base
-                    self.logger.sent_last_data_with_sr_msg(seq_num, base)
+                    self.logger.send_last_data_with_sr_msg(seq_num, base)
                 with self.lock:
                     self.socket.sendto(message, self.address)
 
@@ -113,7 +113,7 @@ class SelectiveRepeat:
 
             with self.lock:
                 self.socket.sendto(pending[0], self.address)
-            self.logger.print_resend_msg_sr(seq_num, self.base, timestamp)
+            self.logger.resend_sr_msg(seq_num, self.base, timestamp)
 
             self.timestamps.put((seq_num, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
@@ -161,7 +161,7 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except TimeoutError:
-                self.logger.print_timeout_msg()
+                self.logger.timeout_msg()
                 self.tries += 1
                 continue
 
@@ -212,7 +212,7 @@ class SelectiveRepeat:
 
     # Seq num = seqnum que espera para escribir
     def process_data(self, is_server, message):
-        self.logger.print_msg(message.seq_num, self.seq_num)
+        self.logger.received_expecting_sr_msg(message.seq_num, self.seq_num)
 
         if message.is_disconnect() and is_server:
             ack_msg = Message(ACK_TYPE, message.seq_num).encode()
