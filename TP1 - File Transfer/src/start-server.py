@@ -12,7 +12,7 @@ def main(args):
         print("\nExiting...")
         sys.exit(0)
     except ServerParamsFailException:
-        print("Error: Some of param/s was not included. please see pyhton3 start-server -h")
+        print("Error: At least one parameter was not included. please see pyhton3 start-server -h")
         sys.exit(0)
 
 

@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 10
+WINDOW_SIZE = 1
 TIMEOUT_TYPE = -1
 DELETION_TIMESTAMP = -1
 
@@ -38,7 +38,7 @@ class SelectiveRepeat:
         empty_file = file_size == 0
 
         if not empty_file:
-            thread_recv_acks = Thread(target=self.recv_acks, args=())
+            thread_recv_acks = Thread(target=self.recv_acks, args=(is_server,))
             thread_check_timeouts = Thread(target=self.check_timeouts, args=())
             thread_recv_acks.start()
             thread_check_timeouts.start()
@@ -143,7 +143,7 @@ class SelectiveRepeat:
 
         self.base = next_base  
 
-    def recv_acks(self):
+    def recv_acks(self, is_server):
         while not self.abort and not self.disconnected:
             if self.tries >= MAX_TRIES:
                 self.abort = True
@@ -159,7 +159,11 @@ class SelectiveRepeat:
             self.tries = 0
             message = Message.decode(enc_msg)
 
-            if message.is_disconnect():
+            if self.last_seq_num and self.last_seq_num == message.seq_num and not is_server:
+                self.disconnected = True
+                self.requests.put((ACK_TYPE, message.seq_num, None))
+                return
+            elif message.is_disconnect():
                 self.disconnected = True
             else:
                 self.requests.put((ACK_TYPE, message.seq_num, None))
@@ -192,7 +196,7 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
-                self.logger.print_msg("Timeout when receiving")
+                self.logger.print_msg("Timeout waiting for data package. Retrying...")
                 self.tries += 1
                 continue
             self.tries = 0

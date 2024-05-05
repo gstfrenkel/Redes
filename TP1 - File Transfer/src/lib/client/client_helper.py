@@ -14,7 +14,7 @@ def createClientAndUploadToServer(args):
         return 0
 
     if None in (address, port, src_path, file_name, protocol):
-        print('\n\nError al inciar, revisar la descripcion del comando')
+        print('\nFailed to start client. Please review program parameters.')
         showUploadUsage()
         return 0
     
@@ -23,7 +23,7 @@ def createClientAndUploadToServer(args):
         file = open(file_path, "rb")
         file.close()
     except Exception:
-        print(f'No se encontro el archivo {file_path}')
+        print(f'File not found {file_path}')
         return 0
 
     client = Client(address, port, src_path, file_name, should_be_verbose)
@@ -47,7 +47,7 @@ def createClientAndDownloadFromServer(args):
         return 0
 
     if None in (address, port, dest_path, file_name, protocol):
-        print('\n\nError al inciar, revisar la descripcion del comando')
+        print('\nFailed to start client. Please review program parameters.')
         showDownloadUsage()
         return 0  
 
@@ -60,7 +60,6 @@ def createClientAndDownloadFromServer(args):
 
     message = client.connect(message_type)
     if not message:
-        print('no hay mensaje')
         return 0
     
     client.download(message, protocol)
@@ -68,9 +67,8 @@ def createClientAndDownloadFromServer(args):
     return 0
 
 def showDownloadUsage():
-    print('usage: download [-h] [-v |-q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]\n\n')
-    print('<command description>\n\n')
-    print('optional arguments:')
+    print('usage: download.py [-h] [-v|-q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME]\n')
+    print('Arguments:')
     print('\t-h,--help\tshow this help message and exit')
     print('\t-v,--verbose\tincrease output verbosity')
     print('\t-q,--quiet\tdecrease output verbosity')
@@ -80,9 +78,8 @@ def showDownloadUsage():
     print('\t-n,--name\tfile name\n')
 
 def showUploadUsage():
-    print('usage: upload [-h] [-v |-q] [-H ADDR] [-p PORT] [-s FILEPATH] [-n FILENAME]\n\n')
-    print('<command description>\n\n')
-    print('optional arguments:')
+    print('usage: upload.py [-h] [-v|-q] [-H ADDR] [-p PORT] [-s FILEPATH] [-n FILENAME]\n')
+    print('Arguments:')
     print('\t-h,--help\tshow this help message and exit')
     print('\t-v,--verbose\tincrease output verbosity')
     print('\t-q,--quiet\tdecrease output verbosity')
