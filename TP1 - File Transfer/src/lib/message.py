@@ -18,7 +18,7 @@ END_TYPE = 8
 
 # Message structure
 #   1  |    4    | ...
-# type | seq_num | data 
+# type | seq_num | data
 
 
 class Message:
@@ -71,4 +71,4 @@ class Message:
 
     @classmethod
     def new_disconnect(cls):
-        return cls(END_TYPE, 0)	
+        return cls(END_TYPE, 0)
