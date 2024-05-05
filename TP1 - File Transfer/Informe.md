@@ -106,10 +106,10 @@ A continuación detallaremos el funcionamiento del handshake para cada uno de lo
 
    - Después de enviar el ACK, el cliente (o el servidor) espera recibir datos del otro extremo.
    - El cliente espera recibir un paquete de datos del servidor en el método `receive`. Si se recibe un paquete dentro del tiempo de espera (`TIMEOUT`), se envía un ACK de confirmación de recepción.
-   - El servidor, por otro lado, espera recibir un ACK del cliente en el método `send`. Si se recibe un ACK válido, se procede a enviar el siguiente paquete de datos. Si no, se continúa retransmitiendo el paquete hasta que se reciba el ACK o se alcance el número máximo de intentos (`MAX_TRIES`).
+    - El servidor, por otro lado, espera recibir un ACK del cliente en el método `send`. Si se recibe un ACK válido, se procede a enviar el siguiente paquete de datos. Si no, se continúa retransmitiendo el paquete hasta que se reciba el ACK o se alcance el número máximo de intentos (`MAX_TRIES`).
 3. **Acknowledgement de finalización de transferencia:**
 
-   - El cliente y el servidor continúan este intercambio de datos y ACK hasta que se completa la transferencia del archivo o hasta que ocurra un error.
+    - El cliente y el servidor continúan este intercambio de datos y ACK hasta que se completa la transferencia del archivo o hasta que ocurra un error.
 
     ![1714709559265](image/Informe/1714709559265.png)
 
@@ -117,13 +117,13 @@ Si hay pérdida de paquetes durante la transferencia de datos, el protocolo Stop
 
 1. **Pérdida de ACK (Acknowledgement):**
 
-- Si el cliente envía un paquete de datos al servidor o al cliente y no recibe un ACK de confirmación dentro del tiempo de espera especificado (`TIMEOUT`), asume que el paquete se perdió en el camino y retransmite el mismo paquete.
-- El cliente continuará retransmitiendo el paquete hasta que reciba un ACK válido o alcance el número máximo de intentos (`MAX_TRIES`).
+    - Si el cliente envía un paquete de datos al servidor o al cliente y no recibe un ACK de confirmación dentro del tiempo de espera especificado (`TIMEOUT`), asume que el paquete se perdió en el camino y retransmite el mismo paquete.
+    - El cliente continuará retransmitiendo el paquete hasta que reciba un ACK válido o alcance el número máximo de intentos (`MAX_TRIES`).
 
 2. **Manejo de Retransmisiones:**
 
-- Tanto el cliente como el servidor mantendrán un contador de intentos (`self.tries`) para rastrear el número de retransmisiones de paquetes.
-- Si el número de intentos alcanza el límite máximo (`MAX_TRIES`), se considera que ha ocurrido un error en la comunicación y se finaliza la transferencia con un mensaje de error.
+    - Tanto el cliente como el servidor mantendrán un contador de intentos (`self.tries`) para rastrear el número de retransmisiones de paquetes.
+    - Si el número de intentos alcanza el límite máximo (`MAX_TRIES`), se considera que ha ocurrido un error en la comunicación y se finaliza la transferencia con un mensaje de error.
 
 Este protocolo maneja la pérdida de paquetes mediante la retransmisión de paquetes perdidos y el seguimiento de intentos para evitar la congestión de la red. Esto asegura que la transferencia de datos sea confiable incluso en entornos donde pueda haber pérdida de paquetes.
 
@@ -136,7 +136,29 @@ Este protocolo maneja la pérdida de paquetes mediante la retransmisión de paqu
 
 ###### Selective Repeat
 
-    ~~En esta sección se explicará la implementación realizada para selective repeat.~~
+1. **Envío del ACK (Acknowledgement) por el Cliente:**
+
+    - Cuando el cliente recibe un paquete de datos, procesa y responde al servidor, confirmando la recepción exitosa. Esto se realiza en el método `process_data`.
+    - Cuando el cliente recibe un paquete de datos, si es el esperado (es decir, su número de secuencia coincide con el esperado), el cliente envía un ACK al servidor indicando el número de secuencia del último paquete recibido correctamente. Esto se hace en el método `process_data` y en la sección donde se comprueba si `is_server` es `False`.
+    - Si el cliente recibe un paquete fuera de secuencia, lo almacena en una lista de pendientes (`pendings`) y no envía un ACK hasta que se reciba el paquete esperado. Esto también se maneja en `process_data`.
+    
+2. Transferencia de Datos:
+    - La transferencia de datos se realiza en el método `send` del cliente.
+    - Se envían paquetes de datos al servidor en un bucle `for` que lee datos del archivo y los envía en paquetes.
+    - Los paquetes se envían con un número de secuencia único y se almacenan en una lista de pendientes para su seguimiento.
+    - Se usa una ventana deslizante para controlar cuántos paquetes pueden ser enviados antes de recibir un ACK. Esto se implementa con la variable `WINDOW_SIZE`.
+
+3. Acknowledgement de finalización de transferencia:
+    - Cuando el servidor recibe el último paquete de datos y lo procesa, envía un ACK de finalización al cliente para indicar que la transferencia ha sido completada. Esto se hace en el método `send` del servidor cuando se envía el último paquete.
+
+4. Pérdida de ACK (Acknowledgement):
+    - Si el cliente no recibe un ACK del servidor dentro de un tiempo determinado, se considera que el ACK se ha perdido y el cliente reenvía el último paquete de datos enviado. Esto se implementa en el método `recv_acks`.
+
+5. Manejo de Retransmisiones:
+    - Si el cliente no recibe un ACK del servidor dentro de un tiempo determinado, reenvía el último paquete de datos enviado.
+    - Si el servidor no recibe un paquete de datos dentro de un tiempo determinado, reenvía un ACK negativo (NACK) para solicitar la retransmisión de ese paquete.
+    - La retransmisión selectiva se realiza en base a los ACK y NACK recibidos, reenviando solo los paquetes que no fueron confirmados correctamente.
+    - El manejo de retransmisiones también se realiza en el método `recv_acks` y en el método `check_timeouts`.
 
 ![1714709950584](image/Informe/1714709950584.png)
 
@@ -207,7 +229,40 @@ wireshark -X lua_script:dissector.lua
 
 # Análisis
 
-En esta sección se mostrará un análisis de mediciones utilizando Upload y Download para ambos protocolos con pérdida de paquetes y sin pérdida.
+A continuación veremos las mediciones de tiempo realizadas para ambos protocolos teniendo en cuenta, distintos tamaños de archivos y diferentes porcentajes de pérdida de paquetes.
+
+**Archivo 50KB**
+
+| Packet Loss   | Selective Repeat | Stop and Wait |
+|----------|------|--------|
+| 0%     | 0.484   | 0.039 |
+| 5%    | 0.641   | 0.354  |
+| 10%   | 2.025   | 1.159 |
+| 15%   | 2.396   | 3.790|
+
+*Insertar Grafico de 50KB*
+
+**Archivo 100KB**
+
+| Packet Loss   | Selective Repeat | Stop and Wait |
+|----------|------|--------|
+| 0%     | 0.771   | 0.047 |
+| 5%    | 3.687   | 2.922  |
+| 10%   | 3.754   | 5.673 |
+| 15%   | 4.457   | 7.032|
+
+*Insertar Grafico de 100KB*
+
+**Archivo 200KB**
+
+| Packet Loss   | Selective Repeat | Stop and Wait |
+|----------|------|--------|
+| 0%     | 2.228   | 0.079 |
+| 5%    | 4.614   | 3.724  |
+| 10%   | 7.082   | 10.539 |
+| 15%   | 7.559   | 14.635|
+
+*Insertar Grafico de 200KB*
 
 # Preguntas a responder
 
@@ -265,8 +320,16 @@ En cambio, TCP se utiliza en escenarios donde la confiabilidad de la entrega es 
 
 - Mantener consistencia en todos los protocolos para mantener separada la aplicación y la implementación de los protocolos.
 - Hacer un correcto manejo en casos de pérdida de paquetes para ambos protocolos implementados.
+- Definición los valores de los timeout, dado que dependiendo de los tamaños de archivo podían quedar cortos.
+- Definir los campos necesarios en los mensajes con el fin de realizar una buena comunicación entre cliente y servidor.
+
 
 # Conclusión
 
 
-- En esta sección se explayará sobre la conclusión a lo largo del desarrollo del trabajo práctico.
+El proyecto que realizamos fue una inmersión profunda en el diseño y desarrollo de un protocolo de aplicación para la transferencia de archivos a través del protocolo de transporte UDP, con extensiones para garantizar una comunicación confiable. Hemos implementado dos versiones de este protocolo: una basada en el esquema Stop and Wait y otra en el esquema Selective Repeat.
+
+Durante este trabajo práctico, nos hemos enfrentado a diversos desafíos, desde la definición de los mensajes hasta el manejo de timeouts y la gestión de la pérdida de paquetes, entre otros aspectos cruciales de la comunicación cliente-servidor.
+En resumen, este proyecto nos ha permitido comprender en profundidad los desafíos asociados
+con la implementación de un protocolo de aplicación y nos brindó una buena experiencia en el
+diseño y desarrollo de sistemas de comunicación confiables.
