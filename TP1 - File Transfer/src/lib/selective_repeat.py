@@ -7,7 +7,7 @@ from threading import Thread, Lock
 import time
 import os
 
-WINDOW_SIZE = 10
+WINDOW_SIZE = 7
 TIMEOUT_TYPE = -1
 DELETION_TIMESTAMP = -1
 
@@ -118,9 +118,6 @@ class SelectiveRepeat:
             self.timestamps.put((seq_num, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
         elif type == ACK_TYPE:
-            if is_end_of_data(self.last_seq_num, seq_num, is_server):
-                self.disconnected = True
-                return
             if pending[2]:
                 return
             self.pendings[seq_num] = (pending[0], 0, True)
@@ -130,10 +127,13 @@ class SelectiveRepeat:
 
             self.update_base_seq_num()
 
-            for k in self.pendings.copy().keys():
-                if k < self.base:
+            for k, v in self.pendings.copy().items():
+                if k < self.base and v[2]:
                     self.timestamps.put((k, DELETION_TIMESTAMP))
                     del self.pendings[k]
+
+            if not is_server and self.last_seq_num and len(self.pendings) == 0:
+                self.disconnected = True
         elif type == END_TYPE and is_server:
             self.socket.sendto(Message.new_ack().encode(), self.address)
             self.disconnected = True
@@ -161,7 +161,7 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except TimeoutError:
-                self.logger.timeout_msg()
+                self.logger.timeout_ack_msg()
                 self.tries += 1
                 continue
 
@@ -201,7 +201,7 @@ class SelectiveRepeat:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except TimeoutError:
-                self.logger.print_msg("Timeout when receiving")
+                self.logger.timeout_data_msg()
                 self.tries += 1
                 continue
             self.tries = 0
@@ -229,6 +229,10 @@ class SelectiveRepeat:
             self.pendings[message.seq_num] = message
             return
         if message.seq_num < self.seq_num:      # Si es un data repetido.
+            return
+
+        if message.seq_num == 0:  # Para que no escriba de más al principio
+            self.seq_num += 1
             return
 
         self.file.write(message.data)

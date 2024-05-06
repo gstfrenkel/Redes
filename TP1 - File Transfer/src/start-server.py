@@ -12,7 +12,7 @@ def main(args):
         print("\nExiting...")
         sys.exit(0)
     except ServerParamsFailException:
-        print("Error: Some of param/s was not included.")
+        print("Error: At least one parameter was not included.")
         sys.exit(0)
 
 
