@@ -43,9 +43,9 @@ Donde cada flag indica:
 
 En la implementación, esta operación sigue los siguientes pasos:
 
-- Primero, se establece una conexión utilizando un Socket en el host "localhost" y el puerto proporcionado como parámetro. Luego, se envía una estructura de Metadata al servidor **(Describirlo en el detalle del protocolo implementado)**.
-  Una vez que se ha enviado la Metadata, comienza la transferencia real del archivo. Para garantizar una transferencia eficiente, el archivo se divide en segmentos más pequeños, cada uno con un tamaño máximo definido (por ejemplo, `MAX_MESSAGE_SIZE = 1024`). Estos segmentos se envían uno por uno servidor hasta que se haya enviado todo el archivo. Es importante destacar que si el tamaño del archivo no es un múltiplo exacto del tamaño máximo del mensaje, el último segmento puede ser más pequeño.
-  Una vez que se ha enviado todo el archivo, se espera una respuesta del servidor para confirmar si la transferencia se realizó correctamente. Esta respuesta puede contener información sobre si el archivo se recibió correctamente o si hubo algún problema durante la transferencia, ayudandonos a garantizar la entrega.
+- Primero, se establece una conexión utilizando un Socket en el host y el puerto proporcionado como parámetro. Luego, se envía una estructura de Metadata al servidor, especificando el nombre que va tener el archivo en el servidor, y si el upload se va a hacer con el protocolo de Selective Repeat o con Stop and Wait.
+- Una vez que se ha enviado la Metadata, comienza la transferencia real del archivo. Para garantizar una transferencia eficiente, el archivo se divide en segmentos más pequeños, cada uno con un tamaño máximo definido (en nuestro caso es de 512 Bytes). Estos segmentos se envían uno por uno al servidor hasta que se haya enviado todo el archivo. Es importante destacar que si el tamaño del archivo no es un múltiplo exacto del tamaño máximo del mensaje, el último segmento puede ser más pequeño.
+- Una vez que se ha enviado todo el archivo, se espera una respuesta del servidor para confirmar si la transferencia se realizó correctamente. Esta respuesta puede contener información sobre si el archivo se recibió correctamente o si hubo algún problema durante la transferencia, ayudandonos a garantizar la entrega.
 
 ###### Download:
 
