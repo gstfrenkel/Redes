@@ -33,6 +33,29 @@ xterm h1
 
 5. Levantamos el servidor y probamos los comandos upload u download.
 
+## Para correr server y cliente:
+
+1. Ejecucion server:
+```
+python3 start-server.py -H 10.0.0.1 -p 12000 -s ./ -v
+```
+
+2. Ejecución cliente upload: 
+```
+python3 upload.py -H 10.0.0.1 -p 12000 -s Archivo_50kb.txt -n 50kbUpload.txt -sr -v
+
+```
+
+3. Ejecución cliente download:
+```
+ python3 download.py -H 10.0.0.1 -p 12000 -d 50kbDownload.txt -n Archivo_50kb.txt -sr -v
+```
+
+4. Chequeo entre archivos: 
+```
+md5sum archivo_princ.txt lib/client/archivo_secun.txt
+```
+
 ## Para correr plugin wireshark
 
 1. Instalar la versión del lenguaje [lua](https://www.lua.org/download.html) que sea compatible con tu versión de wireshark. [ver](https://www.wireshark.org/docs/wsdg_html_chunked/wsluarm.html)
