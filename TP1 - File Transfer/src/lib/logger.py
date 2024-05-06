@@ -23,3 +23,12 @@ class Logger:
 
     def send_last_data_with_sr_msg(self, seq_num, base):
         print(f"Sent last data {seq_num} with window {base}")
+
+    def client_successfully_uploaded_msg(self, ip_addr, port_addr):
+        print(f"Successfully uploaded file from {ip_addr}:{port_addr}.")
+
+    def client_failed_to_upload_msg(self, ip_addr, port_addr):
+        print(f"Failed to upload file from {ip_addr}:{port_addr}.")
+
+    def client_successfully_disconnected_msg(self, ip_addr, port_addr):
+        print(f"Successfully disconnected from {ip_addr}:{port_addr}.")

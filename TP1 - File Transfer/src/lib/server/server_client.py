@@ -1,9 +1,12 @@
-from socket import * 
-from lib.stop_wait import * 
-from lib.message import * 
-from lib.constants import TIMEOUT, MAX_MESSAGE_SIZE, MAX_TRIES
+from socket import socket, AF_INET, SOCK_DGRAM
+from lib.stop_wait import StopAndWait
+from lib.message import Message
+from lib.message import UPLOAD_TYPE_SW, DOWNLOAD_TYPE_SW
+from lib.message import LAST_DATA_TYPE, ACK_TYPE
+from lib.constants import MAX_MESSAGE_SIZE, MAX_TRIES
+from lib.selective_repeat import SelectiveRepeat
 import os
-from lib.selective_repeat import *
+
 
 class ServerClient:
     def __init__(self, address, logger, storage_path):
@@ -17,8 +20,9 @@ class ServerClient:
         self.seq_num = 0
 
     def start(self, message):
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/files", self.storage_path + message.data.decode())
-        print(file_path)
+        relative_path = os.path.dirname(os.path.abspath(__file__)) + "/files"
+        storage_path_file_name = self.storage_path + message.data.decode()
+        file_path = os.path.join(relative_path, storage_path_file_name)
         if message.is_upload_type():
             self.file = open(file_path, "wb+")
             self.download(message)
@@ -29,47 +33,68 @@ class ServerClient:
         self.disconnect()
 
     def download(self, message):
+        a_socket = self.socket
+        address = self.address
+        file = self.file
+        seq_num = self.seq_num
+        logger = self.logger
         if message.type == UPLOAD_TYPE_SW:
-            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num, self.logger)
+            handler = StopAndWait(a_socket, address, file, seq_num, logger)
         else:
-            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num, self.logger)
+            handler = SelectiveRepeat(a_socket, address, file, seq_num, logger)
             self.socket.sendto(Message.new_ack().encode(), self.address)
 
         ok = handler.receive(True, message)
+        ip_addr = self.address[0]
+        port_addr = self.address[1]
         if ok:
-            self.logger.print_msg(f"Successfully uploaded file from {self.address[0]}:{self.address[1]}.")
+            self.logger.client_successfully_uploaded_msg(ip_addr, port_addr)
         else:
-            self.logger.print_msg(f"Failed to upload file from {self.address[0]}:{self.address[1]}.")
-                
+            self.logger.client_failed_to_upload_msg(ip_addr, port_addr)
+
     def upload(self, file_path, msg_type):
         self.seq_num += 1
+        logger = self.logger
+        file = self.file
+        address = self.address
+        a_socket = self.socket
+        seq_num = self.seq_num
+
         if msg_type == DOWNLOAD_TYPE_SW:
-            handler = StopAndWait(self.socket, self.address, self.file, self.seq_num, self.logger)
+            handler = StopAndWait(a_socket, address, file, seq_num, logger)
         else:
-            handler = SelectiveRepeat(self.socket, self.address, self.file, self.seq_num, self.logger)
+            handler = SelectiveRepeat(a_socket, address, file, seq_num, logger)
 
         ok, self.seq_num = handler.send(file_path, True)
 
         while self.seq_num <= 1 and self.tries < MAX_TRIES:
-            self.socket.sendto(Message(LAST_DATA_TYPE, self.seq_num, "").encode(), self.address)
+            last_data_message = Message(LAST_DATA_TYPE, self.seq_num, "")
+            self.socket.sendto(last_data_message.encode(), address)
             try:
                 encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                 message = Message.decode(encoded_msg)
 
                 if message.is_disconnect():
-                    self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
+                    ack_message = Message(ACK_TYPE, message.seq_num)
+                    self.socket.sendto(ack_message.encode(), address)
                     break
-            except timeout:
+            except TimeoutError:
                 self.tries += 1
 
+        ip_addr = address[0]
+        port_addr = address[1]
+
         if ok and self.tries < MAX_TRIES:
-            self.logger.print_msg(f"Successfully uploaded file to {self.address[0]}:{self.address[1]}.")
+            logger.client_successfully_uploaded_msg(ip_addr, port_addr)
         else:
-            self.logger.print_msg(f"Failed to upload file to {self.address[0]}:{self.address[1]}.")
+            logger.client_failed_to_upload_msg(ip_addr, port_addr)
 
     def disconnect(self):
+        ip_addr = self.address[0]
+        port_addr = self.address[1]
+
         if self.file:
             self.file.close()
         self.socket.close()
-        self.logger.print_msg(f"Successfully disconnected from {self.address[0]}:{self.address[1]}.")
-            
+
+        self.logger.client_successfully_disconnected_msg(ip_addr, port_addr)

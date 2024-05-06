@@ -248,10 +248,6 @@ class SelectiveRepeat:
             self.seq_num += 1
 
 
-def is_end_of_data(sr_last_seq_num, seq_num, is_server):
-    return sr_last_seq_num and sr_last_seq_num == seq_num and not is_server
-
-
 def read_file_data(file):
     while True:
         data = file.read(MAX_MESSAGE_SIZE - HEADER_SIZE)
