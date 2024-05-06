@@ -17,7 +17,8 @@ class ServerClient:
         self.seq_num = 0
 
     def start(self, message):
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.storage_path + message.data.decode())
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/files", self.storage_path + message.data.decode())
+        print(file_path)
         if message.is_upload_type():
             self.file = open(file_path, "wb+")
             self.download(message)

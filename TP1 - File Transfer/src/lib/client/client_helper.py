@@ -19,7 +19,7 @@ def createClientAndUploadToServer(args):
         return 0
     
     try:
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), src_path)
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/files", src_path)
         file = open(file_path, "rb")
         file.close()
     except Exception:
@@ -50,6 +50,8 @@ def createClientAndDownloadFromServer(args):
         print('\nFailed to start client. Please review program parameters.')
         showDownloadUsage()
         return 0  
+
+    dest_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/files", dest_path)
 
     client = Client(address, port, dest_path, file_name, should_be_verbose)
 

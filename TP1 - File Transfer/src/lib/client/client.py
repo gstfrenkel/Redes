@@ -67,7 +67,7 @@ class Client:
         self.socket.close()
 
     def upload(self, protocol):
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.src_path)
+        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/files", self.src_path)
         file = open(file_path, "rb")
 
         if protocol == SW:

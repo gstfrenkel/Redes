@@ -47,11 +47,11 @@ class Server:
                 decoded_msg = Message.decode(message)
                 if decoded_msg.is_download_type():
                     try:
-                        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.storage_path + decoded_msg.data.decode())
+                        file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)) + "/files"), self.storage_path + decoded_msg.data.decode())
                         file = open(file_path, "rb")
                         file.close()
                     except Exception:
-                        print(f'No se encontro el archivo {os.path.join(os.path.dirname(os.path.abspath(__file__)), self.storage_path + decoded_msg.data.decode())}')
+                        print(f'No se encontro el archivo {os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)) + "/files"), self.storage_path + decoded_msg.data.decode())}')
                         continue
 
                 client = Thread(target=self.handle_client_msg, args=(address, message))
