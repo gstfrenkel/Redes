@@ -6,7 +6,7 @@ from threading import *
 import time
 import os
 
-WINDOW_SIZE = 1
+WINDOW_SIZE = 7
 TIMEOUT_TYPE = -1
 DELETION_TIMESTAMP = -1
 
@@ -38,7 +38,7 @@ class SelectiveRepeat:
         empty_file = file_size == 0
 
         if not empty_file:
-            thread_recv_acks = Thread(target=self.recv_acks, args=(is_server,))
+            thread_recv_acks = Thread(target=self.recv_acks, args=())
             thread_check_timeouts = Thread(target=self.check_timeouts, args=())
             thread_recv_acks.start()
             thread_check_timeouts.start()
@@ -109,9 +109,6 @@ class SelectiveRepeat:
             self.timestamps.put((seq_num, time.time()))
             self.pendings[seq_num] = (pending[0], pending[1] + 1, pending[2])
         elif type == ACK_TYPE:
-            if self.last_seq_num and self.last_seq_num == seq_num and not is_server:
-                self.disconnected = True
-                return
             if pending[2]:
                 return
             self.pendings[seq_num] = (pending[0], 0, True)
@@ -121,10 +118,13 @@ class SelectiveRepeat:
             
             self.update_base_seq_num()
 
-            for k in self.pendings.copy().keys():
-                if k < self.base:
+            for k, v in self.pendings.copy().items():
+                if k < self.base and v[2]:
                     self.timestamps.put((k, DELETION_TIMESTAMP))
                     del self.pendings[k]
+
+            if not is_server and self.last_seq_num and len(self.pendings) == 0:
+                self.disconnected = True
         elif type == END_TYPE and is_server:
             self.socket.sendto(Message.new_ack().encode(), self.address)
             self.disconnected = True
@@ -143,7 +143,7 @@ class SelectiveRepeat:
 
         self.base = next_base  
 
-    def recv_acks(self, is_server):
+    def recv_acks(self):
         while not self.abort and not self.disconnected:
             if self.tries >= MAX_TRIES:
                 self.abort = True
@@ -159,11 +159,7 @@ class SelectiveRepeat:
             self.tries = 0
             message = Message.decode(enc_msg)
 
-            if self.last_seq_num and self.last_seq_num == message.seq_num and not is_server:
-                self.disconnected = True
-                self.requests.put((ACK_TYPE, message.seq_num, None))
-                return
-            elif message.is_disconnect():
+            if message.is_disconnect():
                 self.disconnected = True
             else:
                 self.requests.put((ACK_TYPE, message.seq_num, None))
