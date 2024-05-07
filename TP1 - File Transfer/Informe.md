@@ -175,7 +175,7 @@ python3 upload.py -H 10.0.0.1 -p 12000 -s archivo1mb.bin -n archivo1mbUP.bin -sw
 
 3. Ejecución cliente download:
 ```
-python3 download.py -H 10.0.0.1 -p 12000 -s archivo1mbDown.bin -n archivo1mb.bin -sw -v
+python3 download.py -H 10.0.0.1 -p 12000 -d archivo1mbDown.bin -n archivo1mb.bin -sw -v
 ```
 
 4. Chequeo entre archivos: 
@@ -183,15 +183,11 @@ python3 download.py -H 10.0.0.1 -p 12000 -s archivo1mbDown.bin -n archivo1mb.bin
 md5sum lib/server/files/archivo1mb.bin lib/client/files/archivo1mbDown.bin
 ```
 
-
 ## Wireshark
 
-Para constatar que los mensajes de nuestro protocolo son como exactamente se describen en este informe, se pueden capturar paquetes con Wireshark, por lo que creamos un plugin que parsea los bytes de los mensajes de la capa de aplicación a los campos de nuestro protocolo (dissector.lua). 
-
-Para probarlo debemos seguir los sigueintes pasos:
+Para constatar que los mensajes de los protocolos desarrollados se coinciden con lo descripto en el presente informe, se pueden capturar paquetes con Wireshark para lo cual fue desarrollado un plugin `dissector.lua` que parsea el payload de los paquetes UDP con el formato de los mensajes de los protocolos implementados.
 
 1. Instalar la versión del lenguaje [lua](https://www.lua.org/download.html) que sea compatible con tu versión de wireshark. [ver](https://www.wireshark.org/docs/wsdg_html_chunked/wsluarm.html)
-
 
 2. Ubicarse en el directorio donde está ubicado el <dissector>.lua y abrir wireshark con el comando:
 
@@ -199,13 +195,13 @@ Para probarlo debemos seguir los sigueintes pasos:
 wireshark -X lua_script:dissector.lua
 ```
 
-3. Elegimos capturar mensajes con 'any' y filtramos wireshark por el protocolo: en nuestro caso, `rdt_protocol_g_09`
+3. Empezar a capturar mensajes en la IP elegida y filtrar por el protocolo `rdt_protocol_g_09`.
 
-4. Enviamos paquetes a través de nuestro protocolo (ver sección Ejemplos de uso).
+4. Iniciar la subida o descarga de un archivo.
 
 # Análisis
 
-A continuación veremos las mediciones de tiempo realizadas para ambos protocolos teniendo en cuenta, distintos tamaños de archivos y diferentes porcentajes de pérdida de paquetes.
+A continuación se adjuntan las mediciones de tiempo realizadas para ambos protocolos teniendo en cuenta, distintos tamaños de archivos y diferentes porcentajes de pérdida de paquetes.
 
 **Archivo 50KB**
 
