@@ -80,8 +80,8 @@ class StopAndWait:
                     encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                     message = Message.decode(encoded_msg)
                     self.logger.print_msg(
-                        'Message received'
-                        'f{message.seq_num}'
+                        "Message received "
+                        f"{message.seq_num}"
                     )
 
                     if message.is_disconnect():
