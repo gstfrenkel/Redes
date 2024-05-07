@@ -16,7 +16,12 @@ Para este trabajo utilizamos una topología de 1 switch y 3 host, donde 1 de ell
 sudo mn --topo single,3
 ```
 
-3. Establecemos la pérdida de paquetes en todos los host. En este caso h1, h2 y h3:
+3. Linkeamos el switch con los hosts:
+```
+link s1 h1 up
+```
+
+4. Establecemos la pérdida de paquetes en todos los host. En este caso h1, h2 y h3:
 
 ```
 s1 tc qdisc add dev s1-eth1 root netem loss 10%
@@ -24,14 +29,14 @@ s1 tc qdisc add dev s1-eth1 root netem loss 10%
 
 **Nota**: análogamente ejecutamos el comando para eth2 y eth3.
 
-4. abrimos las terminales para c/u de los host, incluyendo el servidor:
+5. abrimos las terminales para c/u de los host, incluyendo el servidor:
 
 ```
 xterm h1
 ```
 **Nota**: análogamente abrimos terminales para h2 y h3.
 
-5. Levantamos el servidor y probamos los comandos upload u download.
+6. Levantamos el servidor y probamos los comandos upload u download.
 
 ## Para correr server y cliente:
 
