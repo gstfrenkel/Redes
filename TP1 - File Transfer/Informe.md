@@ -132,7 +132,7 @@ Una vez iniciados los threads, el thread principal envía tantos paquetes con ch
 2. Ejecutar el siguiente comando para establecer la topología anteriomente mencionada:
 
 ```
-sudo mn --topo single,3
+sudo mn --topo linear,1,4
 ```
 
 3. Establecemos la pérdida de paquetes en todos los host. En este caso h1, h2 y h3:

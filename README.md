@@ -13,7 +13,7 @@ Para este trabajo utilizamos una topología de 1 switch y 3 host, donde 1 de ell
 2. Ejecutar el siguiente comando para establecer la topología anteriomente mencionada:
 
 ```
-sudo mn --topo single,3
+sudo mn --topo linear,1,4
 ```
 
 3. Linkeamos el switch con los hosts:
