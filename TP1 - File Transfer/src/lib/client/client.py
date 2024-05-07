@@ -37,6 +37,10 @@ class Client:
             self.logger.print_msg("Failed to establish connection with server.")
             return
         
+        if message.is_error_type():
+            self.logger.print_msg('\nFile not found by the server\n')
+            return message
+        
         self.logger.print_msg("Successfully established connection with server.")
         self.tries = 0
         self.address = address
@@ -45,6 +49,7 @@ class Client:
 
     def disconnect(self):
         while self.tries < MAX_TRIES:
+            print('sending disconnect')
             self.socket.sendto(Message.new_disconnect().encode(), self.address)
 
             try:
@@ -85,6 +90,7 @@ class Client:
 
 
     def download(self, message, protocol):
+        os.makedirs(os.path.dirname(self.src_path), exist_ok=True)
         file = open(self.src_path, "wb+")
 
         if protocol == SW:

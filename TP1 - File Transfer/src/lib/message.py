@@ -16,6 +16,9 @@ ACK_TYPE = 7
 # Disconnection
 END_TYPE = 8
 
+# Error
+ERROR_FILE_OPEN = 9
+
 # Message structure
 #   1  |    4    | ...
 # type | seq_num | data 
@@ -47,6 +50,9 @@ class Message:
 	
 	def is_disconnect(self):
 		return self.type == END_TYPE
+
+	def is_error_type(self):
+		return self.type == ERROR_FILE_OPEN
 	
 	def get_data(self):
 		return self.data
@@ -70,4 +76,8 @@ class Message:
 	
 	@classmethod
 	def new_disconnect(cls):
-		return cls(END_TYPE, 0)	
+		return cls(END_TYPE, 0)
+	
+	@classmethod
+	def new_error_open_file(cls, seq_num):
+		return cls(ERROR_FILE_OPEN, 0)	
