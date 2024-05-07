@@ -81,20 +81,16 @@ class SelectiveRepeat:
             thread_recv_acks.join()
             thread_check_timeouts.join()
 
-        if not self.abort and self.disconnected:
-            if is_server:
-                with self.lock:
-                    self.socket.sendto(Message.new_ack().encode(), self.address)
 
         return not self.abort, self.seq_num
     
     def process_request(self, is_server):
         try:
-            (type, seq_num, timestamp) = self.requests.get()
+            (type, seq_num, timestamp) = self.requests.get(False, TIMEOUT)
             pending = self.pendings[seq_num]
         except Exception as _:
             return
-
+        
         if type == TIMEOUT_TYPE:
             if pending[2]:
                 return
@@ -125,9 +121,6 @@ class SelectiveRepeat:
 
             if not is_server and self.last_seq_num and len(self.pendings) == 0:
                 self.disconnected = True
-        elif type == END_TYPE and is_server:
-            self.socket.sendto(Message.new_ack().encode(), self.address)
-            self.disconnected = True
 
     def update_base_seq_num(self):
         if len(self.pendings) == 1:
@@ -159,11 +152,12 @@ class SelectiveRepeat:
             self.tries = 0
             message = Message.decode(enc_msg)
 
-            if message.is_disconnect():
-                self.disconnected = True
-            else:
+            if message.type == ACK_TYPE:
                 self.requests.put((ACK_TYPE, message.seq_num, None))
-        
+            elif message.type == END_TYPE:
+                print('encolando end type')
+                self.socket.sendto(Message.new_ack().encode(), self.address)
+                self.disconnected = True 
     def check_timeouts(self):
         timestamps = {}
 

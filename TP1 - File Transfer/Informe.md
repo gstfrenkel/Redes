@@ -125,7 +125,7 @@ Una vez iniciados los threads, el thread principal envía tantos paquetes con ch
 
 ## Mininet
 
-- Para probar la pérdida de paquetes hicimos uso de Mininet, para esto creamos una topología de tres Host y un Router, donde podemos probar pérdida de paquetes de ambos lados de la conexión, y la conexión de múltiples clientes a un mismo servidor. Para ello debemos ejecutar los siguientes pasos:
+Para este trabajo utilizamos una topología de 1 switch y 3 host, donde 1 de ellos actúa como servidor y cada host está linkeado con el switch.
 
 1. Tener instalado mininet. [ver](https://mininet.org/download/)
 
@@ -137,8 +137,16 @@ sudo mn --topo linear,1,4
 
 3. Establecemos la pérdida de paquetes en todos los host. En este caso h1, h2 y h3:
 
+- Si se quiere establecer pérdida de paquete en el switch:
+
 ```
 s1 tc qdisc add dev s1-eth1 root netem loss 10%
+```
+
+- Si se quiere establecer pérdida de paquete en el host:
+
+```
+h1s1 tc qdisc add dev h1s1-eth0 root netem loss 10%
 ```
 
 **Nota**: análogamente ejecutamos el comando para eth2 y eth3.
@@ -151,6 +159,29 @@ xterm h1
 **Nota**: análogamente abrimos terminales para h2 y h3.
 
 5. Levantamos el servidor y probamos los comandos upload u download.
+
+## Para correr server y cliente:
+
+1. Ejecucion server:
+```
+python3 start-server.py -H 10.0.0.1 -p 12000 -s ./ -v
+```
+
+2. Ejecución cliente upload: 
+```
+python3 upload.py -H 10.0.0.1 -p 12000 -s archivo1mb.bin -n archivo1mbUP.bin -sw -v
+
+```
+
+3. Ejecución cliente download:
+```
+python3 download.py -H 10.0.0.1 -p 12000 -s archivo1mbDown.bin -n archivo1mb.bin -sw -v
+```
+
+4. Chequeo entre archivos: 
+```
+md5sum lib/server/files/archivo1mb.bin lib/client/files/archivo1mbDown.bin
+```
 
 
 ## Wireshark

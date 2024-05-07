@@ -8,6 +8,7 @@ from lib.selective_repeat import *
 class ServerClient:
     def __init__(self, address, logger, storage_path):
         cli_socket = socket(AF_INET, SOCK_DGRAM)
+        cli_socket.settimeout(TIMEOUT)
         self.storage_path = storage_path
         self.logger = logger
         self.socket = cli_socket
@@ -17,8 +18,8 @@ class ServerClient:
         self.seq_num = 0
 
     def start(self, message):
-        file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)) + "/files", self.storage_path + message.data.decode())
-        print(file_path)
+        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
+        file_path = self.storage_path + message.data.decode()
         if message.is_upload_type():
             self.file = open(file_path, "wb+")
             self.download(message)

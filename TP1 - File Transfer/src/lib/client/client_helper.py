@@ -61,9 +61,9 @@ def createClientAndDownloadFromServer(args):
         message_type = DOWNLOAD_TYPE_SR 
 
     message = client.connect(message_type)
-    if not message:
+    if not message or message.is_error_type():
         return 0
-    
+     
     client.download(message, protocol)
     client.disconnect()
     return 0
