@@ -13,7 +13,7 @@ Para este trabajo utilizamos una topología de 1 switch y 3 host, donde 1 de ell
 2. Ejecutar el siguiente comando para establecer la topología anteriomente mencionada:
 
 ```
-sudo mn --topo linear,4
+sudo mn --topo linear,1,4
 ```
 
 3. Establecemos la pérdida de paquetes en todos los host. En este caso h1, h2 y h3:
@@ -27,7 +27,7 @@ s1 tc qdisc add dev s1-eth1 root netem loss 10%
 - Si se quiere establecer pérdida de paquete en el host:
 
 ```
-h1 tc qdisc add dev h1-eth0 root netem loss 10%
+h1s1 tc qdisc add dev h1s1-eth0 root netem loss 10%
 ```
 
 **Nota**: análogamente ejecutamos el comando para eth2 y eth3.
@@ -50,18 +50,18 @@ python3 start-server.py -H 10.0.0.1 -p 12000 -s ./ -v
 
 2. Ejecución cliente upload: 
 ```
-python3 upload.py -H 10.0.0.1 -p 12000 -s Archivo_50kb.txt -n 50kbUpload.txt -sr -v
+python3 upload.py -H 10.0.0.1 -p 12000 -s archivo1mb.bin -n archivo1mbUP.bin -sw -v
 
 ```
 
 3. Ejecución cliente download:
 ```
- python3 download.py -H 10.0.0.1 -p 12000 -d 50kbDownload.txt -n Archivo_50kb.txt -sr -v
+python3 download.py -H 10.0.0.1 -p 12000 -s archivo1mbDown.bin -n archivo1mb.bin -sw -v
 ```
 
 4. Chequeo entre archivos: 
 ```
-md5sum archivo_princ.txt lib/client/archivo_secun.txt
+md5sum lib/server/files/archivo1mb.bin lib/client/files/archivo1mbDown.bin
 ```
 
 ## Para correr plugin wireshark
