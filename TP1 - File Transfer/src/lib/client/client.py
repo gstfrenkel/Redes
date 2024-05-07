@@ -49,7 +49,6 @@ class Client:
 
     def disconnect(self):
         while self.tries < MAX_TRIES:
-            print('sending disconnect')
             self.socket.sendto(Message.new_disconnect().encode(), self.address)
 
             try:

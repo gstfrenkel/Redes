@@ -13,15 +13,17 @@ class StopAndWait:
         self.seq_num = seq_num
 
     def receive(self, is_server, _):
-        while self.tries < MAX_TRIES:
-            self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
+        self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 
+        while self.tries < MAX_TRIES:
             try:
                 enc_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
             except timeout:
                 self.logger.print_msg(f"Timeout waiting for data package {self.seq_num + 1}. Retrying...")
                 self.tries += 1
                 continue
+
+            self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
 
             message = Message.decode(enc_msg)
             self.logger.print_msg(f"Received {message.seq_num}")
