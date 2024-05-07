@@ -43,4 +43,4 @@ function p_rdt_protocol_g_09.dissector(buf, pinfo, tree)
 end
 
 local udp_port = DissectorTable.get("udp.port")
-udp_port:add(12345, p_rdt_protocol_g_09)
+for i=65535,1,-1 do udp_port:add(i, p_rdt_protocol_g_09) end

@@ -23,13 +23,12 @@ class StopAndWait:
                 self.tries += 1
                 continue
 
-            self.socket.sendto(Message(ACK_TYPE, self.seq_num).encode(), self.address)
-
             message = Message.decode(enc_msg)
+            self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
+
             self.logger.print_msg(f"Received {message.seq_num}")
 
             if message.is_disconnect() and is_server:
-                self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
                 break
 
             if message.seq_num == self.seq_num + 1:
@@ -61,6 +60,7 @@ class StopAndWait:
                 try:
                     encoded_msg, _ = self.socket.recvfrom(MAX_MESSAGE_SIZE)
                     message = Message.decode(encoded_msg)
+                    self.logger.print_msg(f'Message received {message.seq_num}')
 
                     if message.is_disconnect():
                         self.socket.sendto(Message(ACK_TYPE, message.seq_num).encode(), self.address)
