@@ -13,13 +13,21 @@ Para este trabajo utilizamos una topología de 1 switch y 3 host, donde 1 de ell
 2. Ejecutar el siguiente comando para establecer la topología anteriomente mencionada:
 
 ```
-sudo mn --topo single,3
+sudo mn --topo linear,4
 ```
 
 3. Establecemos la pérdida de paquetes en todos los host. En este caso h1, h2 y h3:
 
+- Si se quiere establecer pérdida de paquete en el switch:
+
 ```
 s1 tc qdisc add dev s1-eth1 root netem loss 10%
+```
+
+- Si se quiere establecer pérdida de paquete en el host:
+
+```
+h1 tc qdisc add dev h1-eth0 root netem loss 10%
 ```
 
 **Nota**: análogamente ejecutamos el comando para eth2 y eth3.
