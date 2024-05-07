@@ -1,28 +1,36 @@
 # Introducción
 
-Este trabajo práctico tiene como objetivo crear una aplicación de red para transferir archivos entre cliente y servidor. Se implementarán dos operaciones fundamentales: 
-- UPLOAD (enviar archivos del cliente al servidor)
-- DOWNLOAD (descargar archivos del servidor al cliente).
+Este trabajo práctico tiene como objetivo crear una aplicación de transferencia de archivos entre un servidor y sus clientes de forma tal que se soporten las siguientes operaciones: 
+- UPLOAD: enviar archivos del cliente al servidor.
+- DOWNLOAD: descargar archivos del servidor al cliente.
 
- Se tendrán en cuenta los protocolos TCP y UDP para la comunicación. 
- 
- TCP ofrece un servicio confiable orientado a la conexión, mientras que UDP es sin conexión y menos confiable. Se implementarán versiones de UDP con protocolo Stop & Wait y Selective Repeat con el objetivo de lograr una transferencia confiable al utilizar el protocolo.
-
-# Hipótesis y suposiciones realizadas
-
-- No tendremos paquetes corruptos, UDP lo valida previamente.
-- El archivo a descargar siempre se encuentra presente en el servidor.
-- Si un archivo a subir ya se encuentra en el servidor, se reemplaza su contenido.
-- El tamaño maximo de mensaje sera de 1GB.
-
----
+Dicha transferencia es implementada sobre el protocolo de transporte UDP y debe ser confiable, es decir, soportar pérdida de paquetes en la transferencia. Con el fin de lograr esto es que se implementan dos protocolos de la capa de transporte: Stop & Wait y Selective Repeat.
 
 # Implementación
 
+### Mensajes
+
+Cada mensaje de los protocolos implementados cuenta con un header y un payload. El header contiene un **type** el cual ocupa un byte y que refiere al tipo de mensaje que se está enviando o recibiendo. Los tipos soportados son:
+- UPLOAD_TYPE_SW: subir archivo utilizando protocolo Stop & Wait.
+- UPLOAD_TYPE_SR: subir archivo utilizando protocolo Selective Repeat.
+- DOWNLOAD_TYPE_SW: : descargar archivo utilizando protocolo Stop & Wait.
+- DOWNLOAD_TYPE_SR: descargar archivo utilizando protocolo Selective Repeat.
+- DATA_TYPE: envío de chunk del archivo.
+- LAST_DATA_TYPE: envío del último chunk del archivo.
+- ACK_TYPE: confirmación del recibo de un chunk.
+- END_TYPE: pedido de desconexión.
+
+A su vez, el header contiene el campo de **seq_num** el cual ocupa cuatro bytes y que se utiliza para poder tener un orden entre los paquetes que se envían y se reciben. Por último, el payload puede contener chunks del archivo a subir/descargar (para el caso de DATA_TYPE o LAST_DATA_TYPE), o bien el nombre de la ruta o archivo que se busca subir/descargar (para el caso de UPLOAD_TYPE_SW, UPLOAD_TYPE_SR, DOWNLOAD_TYPE_SW, DOWNLOAD_TYPE_SR).
+
+### Handshake
+
+Tanto como para subir archivos como para descargalos, el cliente establece una conexión con el servidor utilizando un socket y la dirección IP y puerto proporcionados como parámetros del programa. Mediante este socket es que se envía al servidor un pedido de conexión. Es en este mismo mensaje y mediante el payload que se le comunica al servidor el nombre con el cual el archivo debe ser subido, o el nombre del archivo a descargar.
+
+El servidor al recibir este pedido crea un thread de ejecución el cual abre su propio socket con el cliente y envía un mensaje en respuesta. En caso de no recibir este mensaje, el cliente volverá a intentar establecer una conexión con el servidor, y el thread recién mencionado será finalizado por el servidor. En caso de sí recibir el mensaje, el cliente de ese momento en adelante se comunicará con el thread, dejando disponible al servidor para recibir nuevos pedidos, permitiendo así manejar múltiples clientes de forma concurrente.
+
+Una vez terminada la subida/descarga del archivo deseado, el cliente envía un aviso de desconexión al servidor y se espera por la confirmación por parte de este. En caso de no recibirla, el cliente se desconecta sin la certeza de si el servidor recibió el aviso pero con la certeza de haber completado la transferencia del archivo.
+
 ### Cliente
-
-La funcionalidad del cliente se divide en dos aplicaciones de línea de comandos: **upload** y **download**.
-
 ###### Upload:
 
 El comando `upload` envía un archivo al servidor para ser guardado con el nombre asignado.
@@ -38,14 +46,10 @@ Donde cada flag indica:
 - `p, --port`: Indica el puerto.
 - `-s, --src`: Indica el path del archivo a subir.
 - `-n, --name`: Nombre del archivo a subir.
-- `-sw`: Ejecuta el comando con el comportamiento de Stop and Wait.
-- `-sr`: Ejecuta el comando con el comportamiento de Selective Repeat.
+- `-sw`: Ejecuta el comando utilizando el protocolo de Stop & Wait.
+- `-sr`: Ejecuta el comando utilizando el protocolo de Selective Repeat.
 
-En la implementación, esta operación sigue los siguientes pasos:
-
-- Primero, se establece una conexión utilizando un Socket en el host y el puerto proporcionado como parámetro. Luego, se envía una estructura de Metadata al servidor, especificando el nombre que va tener el archivo en el servidor, y si el upload se va a hacer con el protocolo de Selective Repeat o con Stop and Wait.
-- Una vez que se ha enviado la Metadata, comienza la transferencia real del archivo. Para garantizar una transferencia eficiente, el archivo se divide en segmentos más pequeños, cada uno con un tamaño máximo definido (en nuestro caso es de 512 Bytes). Estos segmentos se envían uno por uno al servidor hasta que se haya enviado todo el archivo. Es importante destacar que si el tamaño del archivo no es un múltiplo exacto del tamaño máximo del mensaje, el último segmento puede ser más pequeño.
-- Una vez que se ha enviado todo el archivo, se espera una respuesta del servidor para confirmar si la transferencia se realizó correctamente. Esta respuesta puede contener información sobre si el archivo se recibió correctamente o si hubo algún problema durante la transferencia, ayudandonos a garantizar la entrega.
+En el caso del upload, el mensaje que el servidor responde al pedido de conexión es una confirmación, o ACK, de forma que se le informa al cliente que se puede iniciar la subida inmediatamente. Una vez que el cliente recibe el ACK del último paquete (en Stop & Wait) o que recibe todos los ACK pendientes tras haber enviado el último paquete (en Selective Repeat), se envía el pedido de desconexión.
 
 ###### Download:
 
@@ -53,13 +57,9 @@ El comando `download` descarga un archivo especificado desde el servidor.
 
 `python3 download.py [-h] [-v | -q] [-H ADDR] [-p PORT] [-d FILEPATH] [-n FILENAME] [-sw | -sr] `
 
-Donde todos los flags indican lo mismo que con el comando anterior, con la diferencia de `-d, --dst` que indica el path de destino del archivo a descargar. Además con el flag `-n` indicamos cual es el nombre del archivo a descargar del servidor.
+Donde todos los flags indican lo mismo que con el comando anterior, con la diferencia de `-d` que indica el path de destino del archivo a descargar. Además, el flag `-n` indica cuál es el nombre del archivo a descargar del servidor.
 
-En nuestra implementación, sin importar el protocolo, esta operación sigue los siguientes pasos:
-
-Al igual que `upload`, para comenzar la transferencia de archivos, primero necesitamos establecer un socket utilizando el protocolo adecuado. Luego, el cliente enviará la estructura Metadata al servidor. Una vez que el servidor recibe la Metadata, puede determinar el tamaño del archivo que se va a transferir el cual es enviado de vuelta al cliente para que este último conozca cuántos bytes esperar durante la descarga.
-
-Esta información permite al cliente prepararse para recibir la descarga completa del archivo, asegurándose de manejar correctamente cada segmento para reconstruir el archivo original en su sistema local. Una vez que se ha completado la descarga de todos los segmentos, el cliente confirma la integridad de la transferencia.
+En el caso del upload, el mensaje que el servidor responde al pedido de conexión no es una confirmación, o ACK, sino que es el primer chunk de información del archivo a descargar de forma que en un solo mensaje se le indica al cliente que la conexión fue exitosa y que puede iniciar la descargar inmediatamente. Una vez que el cliente recibe el último paquete de data (en Stop & Wait) o que recibe todos los paquetes de data pendientes para escribir en disco el último (en Selective Repeat), se envía el pedido de desconexión.
 
 ### Servidor
 
@@ -76,103 +76,48 @@ Donde los flags indican:
 - `-p/--port`: Indica el puerto
 - `-s/--storage`: El path en el que se almacenan los archivos.
 
-El servidor va a proveer el servicio de subida y bajada de archivos. 
+Al iniciar el servidor, este crea un socket y espera por pedidos de conexión entrantes. Para cada pedido, inicia un thread el cual se encarga de manejar la transferencia de información con el cliente pertinente. De esta forma se logra un procesamiento simple en el que el servidor actúa como "recepcionista" indicándole a los clientes con qué thread se deben comunicar, logrando así la posibilidad de manejar múltiples clientes de forma concurrente.
 
-Para ello seguirá los siguientes pasos:
+###### Upload
 
-Cuando el servidor recibe el comando "start-server", crea un nuevo servidor y comienza a escuchar en el puerto especificado para nuevas conexiones entrantes. Una vez que el servidor está creado y escuchando, permanece a la espera de una conexion.
-Cuando se establece una nueva conexión, el servidor acepta la conexión y crea un nuevo hilo para manejarla. Esto permite al servidor seguir esperando nuevas conexiones mientras maneja la conexión actual en un hilo separado. Este enfoque de subprocesos múltiples asegura que el servidor pueda manejar múltiples conexiones simultáneamente.
-Una vez que se ha establecido la conexión y se ha creado un nuevo hilo para manejarla, el servidor espera recibir la Metadata correspondiente a la operación de "UPLOAD" o "DOWNLOAD".
+En caso de no ser posible subir el archivo pedido (ej ruta inválida), se le informa al cliente mediante un mensaje de error para que rectifique el pedido. En cualquier otro caso, la respuesta del thread ante el pedido de subida es un ACK. En Stop & Wait, el servidor reenvía ACKs en tanto y cuanto el cliente no haya respondido con un paquete con nuevos chunks a subir o bien un pedido de desconexión, mientras que en Selective Repeat, cada mensaje de data es respondido con un ACK independientemente de si ya había sido enviado o no.
 
-Para **UPLOAD**, hay que encargarse de recibir un archivo:
+###### Download
 
-- Recibirá el archivo de a segmentos de tamaño `MAX_MESSAGE_SIZE = 1024`, por lo tanto, teniendo en cuenta que ya conoce su tamaño, va a iterar hasta saber que consiguió el archivo completo. Una vez que finalizó, se encarga de mandar un mensaje al cliente de que finalizó correctamente el comando.
+En caso de no ser posible descargar el archivo pedido (ej ruta inválida), se le informa al cliente mediante un mensaje de error para que rectifique el pedido. En cualquier otro caso, la respuesta del thread ante el pedido de subida es un ACK. En Stop & Wait, el servidor reenvía paquetes de data en tanto y cuanto el cliente no haya respondido con un ACK o bien un pedido de desconexión, mientras que en Selective Repeat, el servidor envía tantos paquetes de data como permita la ventana, reenviando aquellos que no hayan sido confirmados por el cliente mediante un ACK pasado el timeout definido.
 
-Para **DOWNLOAD**, hay que encargarse de envíar un archivo:
+### Stop & Wait
 
-- Una vez que el servidor ubica el archivo solicitado, le envía al cliente el tamaño del archivo. Luego, le envía el archivo al cliente de a segmentos de a `MAX_MESSAGE_SIZE = 1024`. Y al finalizar, espera que el cliente le mande un mensaje indicando que recibió el archivo correctamente.
+A continuación, se explica el funcionamiento del protocolo Stop & Wait implementado, tomando como caso la subida de un archivo (la descarga es la operación inversa con las excepciones anteriormente mencionadas).
 
-### Handshake
-
-A continuación detallaremos el funcionamiento del handshake para cada uno de los protocolos
-
-###### Stop and Wait
-
-1. **Envío del ACK (Acknowledgement) por el Cliente:**
-
-   - En el método `receive(self, is_server)`, el cliente (o el servidor si `is_server` es `True`) envía un mensaje de tipo ACK (`ACK_TYPE`) al otro extremo del canal de comunicación, indicando que está listo para recibir datos.
-   - Este mensaje incluye el número de secuencia actual (`self.seq_num`) para la sincronización.
-2. **Transferencia de Datos:**
-
-   - Después de enviar el ACK, el cliente (o el servidor) espera recibir datos del otro extremo.
-   - El cliente espera recibir un paquete de datos del servidor en el método `receive`. Si se recibe un paquete dentro del tiempo de espera (`TIMEOUT`), se envía un ACK de confirmación de recepción.
-    - El servidor, por otro lado, espera recibir un ACK del cliente en el método `send`. Si se recibe un ACK válido, se procede a enviar el siguiente paquete de datos. Si no, se continúa retransmitiendo el paquete hasta que se reciba el ACK o se alcance el número máximo de intentos (`MAX_TRIES`).
-3. **Acknowledgement de finalización de transferencia:**
-
-    - El cliente y el servidor continúan este intercambio de datos y ACK hasta que se completa la transferencia del archivo o hasta que ocurra un error.
-
-    ![1714709559265](image/Informe/1714709559265.png)
-
-Si hay pérdida de paquetes durante la transferencia de datos, el protocolo Stop-and-Wait manejaría esta situación de la siguiente manera:
-
-1. **Pérdida de ACK (Acknowledgement):**
-
-    - Si el cliente envía un paquete de datos al servidor o al cliente y no recibe un ACK de confirmación dentro del tiempo de espera especificado (`TIMEOUT`), asume que el paquete se perdió en el camino y retransmite el mismo paquete.
-    - El cliente continuará retransmitiendo el paquete hasta que reciba un ACK válido o alcance el número máximo de intentos (`MAX_TRIES`).
-
-2. **Manejo de Retransmisiones:**
-
-    - Tanto el cliente como el servidor mantendrán un contador de intentos (`self.tries`) para rastrear el número de retransmisiones de paquetes.
-    - Si el número de intentos alcanza el límite máximo (`MAX_TRIES`), se considera que ha ocurrido un error en la comunicación y se finaliza la transferencia con un mensaje de error.
-
-Este protocolo maneja la pérdida de paquetes mediante la retransmisión de paquetes perdidos y el seguimiento de intentos para evitar la congestión de la red. Esto asegura que la transferencia de datos sea confiable incluso en entornos donde pueda haber pérdida de paquetes.
+Tras establecida la conexión, el cliente envía paquetes con chunks de información del archivo a subir, esperando entre cada uno a recibir el ACK correspondiente con el sequence number del paquete enviado.
 
 ![1714709709843](image/Informe/1714709709843.png)
 
+En caso de perderse un ACK del servidor, el cliente jamás obtendrá la confirmación del servidor, por lo que debe reenviar el paquete tantas veces como lo permita la constante de `MAX_TRIES`, o hasta recibir el ACK correspondiente. En este caso, el servidor guarda un registro de cuál fue el último paquete de data que recibió por lo que no vuelve a escribir el paquete recibido por duplicado.
 
-* **~~ESCRIBIR PARTE DE PÉRDIDA DE PAQUETE~~ **
+En caso de que se pierda data, el cliente jamás obtendrá el ACK del servidor por lo que se reenvía el paquete de data. En este caso, el sequence number del nuevo paquete de data no coincidirá con el último recibido por el servidor, por lo que este escribirá la nueva información recibida en el archivo.
+
+### Selective Repeat
+
+A continuación, se explica el funcionamiento del protocolo Selective Repeat implementado, tomando como caso la subida de un archivo (la descarga es la operación inversa con las excepciones anteriormente mencionadas).
+
+Tras establecida la conexión, el cliente inicia dos threads adicionales de forma que se utilizan tres threads en total. El primero (y el principal) se encarga de enviar paquetes de información, mover la ventana, guardar registro de los paquetes enviados y recibidos y procesar requests o pedidos de los otros threads. El segundo se encarga de recibir ACKs de parte del servidor e informarle al thread principal de los sequence number que llegaron exitosamente al servidor. Por último, el tercer thread se encarga de mantener un hashmap de los paquetes enviados con el timestamp en el que fueron enviados, con el fin de identificar aquellos que hayan entrado en timeout, e informa al thread principal sobre cuáles paquetes debe reenviar.
+
+La comunicación de los dos threads secundarios con el principal se realiza a través de colas de mensajes, de forma que no son necesarios locks entre threads. Los mensajes que se comunican son:
+- El thread principal le comunica al thread de timeouts el sequence number del paquete enviado y el timestamp en el que fue enviado.
+- El thread de ACKs le comunica al thread principal sobre los sequence numbers de los paquetes que han llegado al servidor exitosamente. Cada vez que el thread prinicipal toma consciencia de que un nuevo paquete llegó a destino, le comunica al thread de timeouts que puede dejar de trackear dicho sequence number.
+- El thread de timeouts le comunica al thread principal que un paquete entró en timeout y que lo debe reenviar.
+
+Una vez iniciados los threads, el thread principal envía tantos paquetes con chunks de información como permita la ventana, informando de los timestamps y recibiendo información de los paquetes que llegaron y que entraron en timeout de forma concurrente. Cuando se recibe el ACK del primer paquete de la ventana, esta se actualiza en función de todos los paquetes que se hayan recibido. Por ejemplo, si se recibió el ACK del segundo paquete de la ventana y luego del primero, la ventana se puede mover dos lugares. En caso de que no se haya recibido el segundo pero sí el primero, tercero, cuarto, quinto, etc, solo se puede mover un lugar ya que la ventana debe esperar a ese segundo ACK para poder moverla.
 
 ![1714709716588](image/Informe/1714709716588.png)
 
-###### Selective Repeat
-
-1. **Envío del ACK (Acknowledgement) por el Cliente:**
-
-    - Cuando el cliente recibe un paquete de datos, procesa y responde al servidor, confirmando la recepción exitosa. Esto se realiza en el método `process_data`.
-    - Cuando el cliente recibe un paquete de datos, si es el esperado (es decir, su número de secuencia coincide con el esperado), el cliente envía un ACK al servidor indicando el número de secuencia del último paquete recibido correctamente. Esto se hace en el método `process_data` y en la sección donde se comprueba si `is_server` es `False`.
-    - Si el cliente recibe un paquete fuera de secuencia, lo almacena en una lista de pendientes (`pendings`) y no envía un ACK hasta que se reciba el paquete esperado. Esto también se maneja en `process_data`.
-    
-2. Transferencia de Datos:
-    - La transferencia de datos se realiza en el método `send` del cliente.
-    - Se envían paquetes de datos al servidor en un bucle `for` que lee datos del archivo y los envía en paquetes.
-    - Los paquetes se envían con un número de secuencia único y se almacenan en una lista de pendientes para su seguimiento.
-    - Se usa una ventana deslizante para controlar cuántos paquetes pueden ser enviados antes de recibir un ACK. Esto se implementa con la variable `WINDOW_SIZE`.
-
-3. Acknowledgement de finalización de transferencia:
-    - Cuando el servidor recibe el último paquete de datos y lo procesa, envía un ACK de finalización al cliente para indicar que la transferencia ha sido completada. Esto se hace en el método `send` del servidor cuando se envía el último paquete.
-
-4. Pérdida de ACK (Acknowledgement):
-    - Si el cliente no recibe un ACK del servidor dentro de un tiempo determinado, se considera que el ACK se ha perdido y el cliente reenvía el último paquete de datos enviado. Esto se implementa en el método `recv_acks`.
-
-5. Manejo de Retransmisiones:
-    - Si el cliente no recibe un ACK del servidor dentro de un tiempo determinado, reenvía el último paquete de datos enviado.
-    - Si el servidor no recibe un paquete de datos dentro de un tiempo determinado, reenvía un ACK negativo (NACK) para solicitar la retransmisión de ese paquete.
-    - La retransmisión selectiva se realiza en base a los ACK y NACK recibidos, reenviando solo los paquetes que no fueron confirmados correctamente.
-    - El manejo de retransmisiones también se realiza en el método `recv_acks` y en el método `check_timeouts`.
-
 ![1714709950584](image/Informe/1714709950584.png)
-
-* **~~ESCRIBIR PARTE DE PÉRDIDA DE ACK~~**
 
 ![1714709999321](image/Informe/1714709999321.png)
 
-* **~~ESCRIBIR PARTE DE PÉRDIDA DE PAQUETE~~**
-
 ![1714710022980](image/Informe/1714710022980.png)
-
-### Cierre de conexión
-
-    ~~En esta sección se explicará que se implementará para finalizar la conexión, NO con un Ctrl + C.~~
 
 ---
 
@@ -320,17 +265,11 @@ En cambio, TCP se utiliza en escenarios donde la confiabilidad de la entrega es 
 # Dificultades encontradas
 
 - Mantener consistencia en todos los protocolos para mantener separada la aplicación y la implementación de los protocolos.
-- Hacer un correcto manejo en casos de pérdida de paquetes para ambos protocolos implementados.
+- Realizar un correcto manejo de la pérdida de paquetes para ambos protocolos implementados.
 - Definición los valores de los timeout, dado que dependiendo de los tamaños de archivo podían quedar cortos.
 - Definir los campos necesarios en los mensajes con el fin de realizar una buena comunicación entre cliente y servidor.
-
+- Concurrencia en Selective Repeat.
 
 # Conclusión
 
-
-El proyecto que realizamos fue una inmersión profunda en el diseño y desarrollo de un protocolo de aplicación para la transferencia de archivos a través del protocolo de transporte UDP, con extensiones para garantizar una comunicación confiable. Hemos implementado dos versiones de este protocolo: una basada en el esquema Stop and Wait y otra en el esquema Selective Repeat.
-
-Durante este trabajo práctico, nos hemos enfrentado a diversos desafíos, desde la definición de los mensajes hasta el manejo de timeouts y la gestión de la pérdida de paquetes, entre otros aspectos cruciales de la comunicación cliente-servidor.
-En resumen, este proyecto nos ha permitido comprender en profundidad los desafíos asociados
-con la implementación de un protocolo de aplicación y nos brindó una buena experiencia en el
-diseño y desarrollo de sistemas de comunicación confiables.
+El proyecto realizado fue una inmersión profunda en el desarrollo de dos protocolos de transporte para la transferencia de archivos a través del protocolo de transporte UDP, con extensiones para garantizar una comunicación confiable. Durante este trabajo práctico se presentaron diversos desafíos; desde la definición de los mensajes hasta el manejo de timeouts y la gestión de la pérdida de paquetes, entre otros aspectos cruciales de la comunicación cliente-servidor. En resumen, este proyecto permitió comprender en profundidad los desafíos asociados con la implementación de un protocolo de transporte y brindó una buena experiencia en el diseño y desarrollo de sistemas de comunicación confiables.
