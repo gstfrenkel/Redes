@@ -1,7 +1,15 @@
-# Comando para levantar mininet con la topología requerida. 
+# Paso a paso para levantar la topología con el controller POX
+
+1. Comando para levantar un controller con POX
 
 ```
-sudo mn --custom topology.py --topo customTopo,switches_number=4 --mac --switch ovsk
+./pox/pox.py --verbose forwarding.l2_learning
+```
+
+2. Comando para levantar mininet con la topología requerida
+
+```
+sudo mn --custom topology.py --topo customTopo,switches_number=4 --mac --switch ovsk --controller=remote
 ```
 
 ### Comentario
