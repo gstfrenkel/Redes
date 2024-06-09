@@ -1,3 +1,0 @@
-[submodule "TP2_Openflow/TP2_Openflow/pox"]
-	path = TP2_Openflow/TP2_Openflow/pox
-	url = https://github.com/noxrepo/pox.git
