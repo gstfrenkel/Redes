@@ -10,6 +10,8 @@ Teaching Assistant: Arpit Gupta
 from pox.core import core
 from pox.lib.util import dpidToStr
 from pox.lib.revent.revent import EventMixin
+import pox.openflow.libopenflow_01 as of
+from pox.lib.packet.ethernet import ethernet
 import os
 ''' Add your imports here ... '''
 
@@ -26,8 +28,16 @@ class Firewall(EventMixin):
         log.debug("Enabling Firewall Module")
 
     def _handle_ConnectionUp(self, event):
-        ''' Add your logic here ... '''
+        log.info(f"EVENT: {event.dpid}")
+        message = of.ofp_flow_mod()
+        self.set_firewall_rules(event, message)
+        event.connection.send(message)
         log.debug("Firewall rules installed on %s", dpidToStr(event.dpid))
+
+    def set_firewall_rules(self, event, message):
+        message.match.dl_type = ethernet.IP_TYPE
+        # Descarta el paquete con src ip == a 10.0.0.1
+        message.match.nw_src = "10.0.0.1"
 
 
 def launch():

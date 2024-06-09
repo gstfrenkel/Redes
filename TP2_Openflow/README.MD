@@ -3,13 +3,13 @@
 1. Comando para levantar un controller con POX
 
 ```
-./pox/pox.py --verbose forwarding.l2_learning
+python3 pox.py --verbose openflow.of_01 forwarding.l2_learning firewall
 ```
 
 2. Comando para levantar mininet con la topología requerida
 
 ```
-sudo mn --custom topology.py --topo customTopo,switches_number=4 --mac --switch ovsk --controller=remote
+sudo mn --custom topology.py --topo customTopo,switches_number=4 --mac --switch ovsk --controller remote,port=6633
 ```
 
 ### Comentario
