@@ -3,7 +3,7 @@
 1. Comando para levantar un controller con POX
 
 ```
-python3 pox.py --verbose openflow.of_01 forwarding.l2_learning firewall
+python3 pox.py --verbose openflow.of_01 samples.pretty_log forwarding.l2_learning firewall
 ```
 
 2. Comando para levantar mininet con la topología requerida
