@@ -31,13 +31,16 @@ class Firewall(EventMixin):
         log.info(f"EVENT: {event.dpid}")
         message = of.ofp_flow_mod()
         self.set_firewall_rules(event, message)
-        event.connection.send(message)
         log.debug("Firewall rules installed on %s", dpidToStr(event.dpid))
 
     def set_firewall_rules(self, event, message):
-        message.match.dl_type = ethernet.IP_TYPE
-        # Descarta el paquete con src ip == a 10.0.0.1
-        message.match.nw_src = "10.0.0.1"
+        rules = [{"nw_src": "10.0.0.1", "nw_dst": "10.0.0.3"}]
+        for rule in rules:
+            message.match.dl_type = ethernet.IP_TYPE
+            # Descarta el paquete con src ip == a 10.0.0.1 y dst ip == 10.0.0.3
+            message.match.nw_src = rule["nw_src"]
+            message.match.nw_dst = rule["nw_dst"]
+            event.connection.send(message)
 
 
 def launch():
