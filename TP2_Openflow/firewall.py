@@ -32,16 +32,20 @@ class Firewall(EventMixin):
     def _handle_ConnectionUp(self, event):
         log.info(f"EVENT: {event.dpid}")
         message = of.ofp_flow_mod()
+
         self.firewall_rules = self.get_firewall_rules(FILE_NAME)
         if event.dpid == self.firewall_rules['firewall_switch']:
             self.set_firewall_rules(event, message)
-            event.connection.send(message)
             log.debug("Firewall rules installed on %s", dpidToStr(event.dpid))
 
     def set_firewall_rules(self, event, message):
-        message.match.dl_type = ethernet.IP_TYPE
-        # Descarta el paquete con src ip == a 10.0.0.1
-        message.match.nw_src = "10.0.0.1"
+        rules = self.firewall_rules['rules']
+        for rule in rules:
+            message.match.dl_type = ethernet.IP_TYPE
+            # Descarta el paquete con src ip == a 10.0.0.1 y dst ip == 10.0.0.3
+            message.match.nw_src = rule["nw_src"]
+            message.match.nw_dst = rule["nw_dst"]
+            event.connection.send(message)
 
     def get_firewall_rules(self, file_name):
         with open(file_name, 'r') as file:

@@ -1,8 +1,9 @@
 {
     "firewall_switch": 1,
-    "firewall_rules": [
+    "rules": [
         {
-            
+            "nw_src": "10.0.0.1",
+            "nw_dst": "10.0.0.3"
         }
     ]
 }
