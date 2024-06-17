@@ -26,6 +26,40 @@ Si no tenemos instalado el `ovsk` se puede construir la topologia con `--switch 
 - Ejecutar el `./configure`
 - Hacer un make
 
+## Requisitos de instalación
+
+- Python version 3.7|3.8|3.9
+- Tener instalado mininet.
+- Tener instalado Openvswitch.
+
+## Levantar servidor pox sobre OpenFlow
+
+1. Dar permisos de ejecución al script `run_server.sh`:
+
+```
+chmod -x run_server.sh
+```
+
+2. Ejecutar con:
+
+```
+./run_server.sh
+```
+
+## Levantar topología con switchs variable
+
+1. Dar permisos de ejecución al script `run_topo.sh`:
+
+```
+chmod -x run_topo.sh
+```
+
+2. Ejecutar con:
+
+```
+./run_topo.sh
+```
+
 ## Ejecutar pruebas con iperf
 
 ### Para levantar un servidor
