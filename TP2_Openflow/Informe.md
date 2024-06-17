@@ -63,11 +63,37 @@ servidor h4:
 ![2-srv-udp-5001-ok](images/2-srv-udp-5001-ok.png)
 
 
-### 3. host no se pueden comunicar.
+### 3. Dos hosts no se pueden comunicar.
 
-En nuestro caso elegimos los host nro 2 y 3 los cuales no se pueden comunicar.
+En nuestro caso elegimos los hosts 1 y 3, los cuales no se pueden comunicar:
 
+#### Caso UDP
 
+Levantamos un server en h1 y se verifica que desde h3 no se le puede enviar mensajes:
+
+![3-srv-udp-1-fail](images/3-srv-udp-1-fail.png)
+
+Levantamos server en h3 y se verifica que desde h1 no se le puede enviar mensajes:
+
+![3-srv-udp-3-fail](images/3-srv-udp-3-fail.png)
+
+#### Caso TCP
+
+Levantamos un server TCP en h1 y se verifica que desde h3 no se le puede enviar mensajes:
+
+![3-srv-tcp-1-fail](images/3-srv-tcp-1-fail.png)
+
+Con wireshark se puede ver que en el switch 1, que es donde tenemos instalado el firewall, figura que se pierden paquetes por retransmisión de SYN:
+
+![3-srv-tcp-1-wireshark-fail](images/3-srv-tcp-1-wireshark-fail.png)
+
+Ahora, Levantamos server en h3 y se verifica que desde h1 no se le puede enviar mensajes:
+
+![3-srv-tcp-3-fail](images/3-srv-tcp-3-fail.png)
+
+Mismo análisis visto desde wireshark, pero desde el link de salida a h1:
+
+![3-srv-tcp-3-wireshark-fail](images/3-srv-tcp-3-wireshark-fail.png)
 
 ## Preguntas a responder
 
