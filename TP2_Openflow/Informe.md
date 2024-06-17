@@ -46,7 +46,11 @@ Para ello se tuvo como objetivo implementar una topología dinámica, donde a tr
 
 ### 2. descartar todos los mensajes que provengan del host 1, tengan como puerto destino el 5001, y esten utilizando el protocolo UDP.
 
-### 3. host no se pueden comunicar
+### 3. host no se pueden comunicar.
+
+En nuestro caso elegimos los host nro 2 y 3 los cuales no se pueden comunicar.
+
+
 
 ## Preguntas a responder
 
