@@ -46,6 +46,23 @@ Para ello se tuvo como objetivo implementar una topología dinámica, donde a tr
 
 ### 2. descartar todos los mensajes que provengan del host 1, tengan como puerto destino el 5001, y esten utilizando el protocolo UDP.
 
+Se puede observar que al iniciar el servidor con puerto 5001 utilizando el protocolo udp con el flag `-u` en h4:
+
+![2-srv-udp-5001](images/2-srv-udp-5001.png)
+
+Al momento de generar una conexión con un cliente en h1 se puede ver que se rechazan las conexiones provenientes de h1.
+
+![2-cl-udp-refused](images/2-cl-udp-refused.png)
+
+Mientras que si por ejemplo generamos un cliente desde h2 esto no sucede y se envían los mensajes sin problemas:
+
+![2-cl-udp-ok](images/2-cl-udp-ok.png)
+
+servidor h4:
+
+![2-srv-udp-5001-ok](images/2-srv-udp-5001-ok.png)
+
+
 ### 3. host no se pueden comunicar.
 
 En nuestro caso elegimos los host nro 2 y 3 los cuales no se pueden comunicar.

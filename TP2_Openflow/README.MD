@@ -15,7 +15,7 @@ sudo mn --custom topology.py --topo customTopo,switches_number=4 --mac --switch 
 ### Comentario
 Si no tenemos instalado el `ovsk` se puede construir la topologia con `--switch ovsbr`
 
-# Como instalar Openvswitch
+## Como instalar Openvswitch
 
 - Descargar el paquete comprimido
 - Ejecutar el `./boot.sh`
@@ -25,3 +25,24 @@ Si no tenemos instalado el `ovsk` se puede construir la topologia con `--switch 
 	- `sudo apt-get install libtool libtool-bin`
 - Ejecutar el `./configure`
 - Hacer un make
+
+## Ejecutar pruebas con iperf
+
+### Para levantar un servidor
+
+Una vez abierta la terminal sobre el host que queremos levantar el servidor ejecutamos:
+
+```
+iperf -s -p <puerto> -u
+```
+
+### Para generar un cliente y enviar mensajes 
+
+Para levantar un cliente, simplemente dentro de la terminal del host cliente ejecutamos:
+
+```
+iperf -c <ip_srv> -p <puerto_srv> -u 
+```
+
+**Nota**: 
+El flag `-u` es para indicar que queremos usar el protocolo UDP. Se puede quitar el flag y eso provocará que el protocolo usado sea TCP.
