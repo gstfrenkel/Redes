@@ -39,8 +39,60 @@ El trabajo práctico tiene como objetivo Adquirir conocimientos y práctica sobr
 
 Para ello se tuvo como objetivo implementar una topología dinámica, donde a través de OpenFLow se construyó un firewall a nivel capa de enlace.
 
+## Objetivo
+
+Se propone desarrollar una topología parametrizable sobre la cual probaremos diferentes funcionalidades que nos brinda la tecnología OpenFlow.
+Se tendrá una cantidad de switches variable, formando una cadena, en cuyos extremos se tienen dos hosts. La topología debe recibir por parámetro la cantidad de switches. 
+
+Una vez lograda la topología, se debe verificar el correcto funcionamiento de la red, a través del comando pingall. Se debe correr el comando pingall en el entorno de mininet, y poder registrar el envio y
+recepcion de los mensajes, tanto en Wireshark como en los registros del controlador remoto.
+
+Una vez verificado el correcto funcionamiento de la red, vamos a modifcar el controlador, para que funcione como un Firewall, con una serie de reglas definidas a continuación:
+
+1. Se deben descartar todos los mensajes cuyo puerto destino sea 80.
+2. Se deben descartar todos los mensajes que provengan del host 1, tengan como puerto destino el 5001, y esten
+utilizando el protocolo UDP.
+3. Se debe elegir dos hosts cualquiera, y los mismos no deben poder comunicarse de ninguna forma.
+
+## Readme
+
+### Requisitos de instalación
+
+- Python version 3.7|3.8|3.9
+- Tener instalado mininet.
+- Tener instalado Openvswitch.
+
+### Levantar servidor pox con firewall sobre OpenFlow
+
+1. Dar permisos de ejecución al script `run_server.sh`:
+
+```
+chmod -x run_server.sh
+```
+
+2. Ejecutar con:
+
+```
+./run_firewall.sh
+```
+
+### Levantar topología con switchs variable
+
+1. Dar permisos de ejecución al script `run_topo.sh`:
+
+```
+chmod -x run_topo.sh
+```
+
+2. Ejecutar con:
+
+```
+./run_topo.sh <cantidad de switches>
+```
 
 ## Pruebas
+
+A continuación se detallan algunas de las pruebas realizadas para verificar el correcto funcionamiento del firewall:
 
 ### 1. descartar todos los mensajes cuyo puerto destino sea 80.
 
@@ -128,7 +180,7 @@ Los switch openflow tienen un control centralizado donde la lógica de red se se
 _**¿Se pueden reemplazar todos los routers de la Intenet por Switches OpenFlow? Piense en el escenario interASes para
 elaborar su respuesta**_
 
-Teniendo en cuenta los escenarios SA, los routers están preparados para gestionar tráfico a una gran escala dado que utilizan hardware especializado (ASICs) para procesar rápidamente los paquetes, sin embargo en los casos de los switches openFlow requieren una conexión constante con el plano de control para tomar decisiones de enrutamiento, acción que podría agregar latencia. Además, los routers utilizan protocolos más complejos que los utilizados por los switches, como por ejemplo el protocolo de enrutamiento BGP (Border Gateway Protocol), utilizado precisamente a la hora de mantener conexiones entre distintos sistemas autónomos (AS)
+Teniendo en cuenta los escenarios SA, los routers están preparados para gestionar tráfico a una gran escala dado que utilizan hardware especializado (ASICs) para procesar rápidamente los paquetes, sin embargo en los casos de los switches openFlow requieren una conexión constante con el plano de control para tomar decisiones de enrutamiento, acción que podría agregar latencia. Además, los routers utilizan protocolos más complejos que los utilizados por los switches, como por ejemplo el protocolo de enrutamiento BGP (Border Gateway Protocol), utilizado precisamente a la hora de mantener conexiones entre distintos sistemas autónomos (AS).
 
 ## Dificultades encontradas
 
