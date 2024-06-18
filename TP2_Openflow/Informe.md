@@ -106,13 +106,13 @@ _**¿Cuál es la diferencia entre un Switch convencional y un Switch OpenFlow?**
 
 La diferencia entre un switch openflow y uno convencional radica en el control de los mismos. 
 
-Los switch openflow tienen un control centralizado donde la lógica de red se separa del hardware y se maneja desde el “control plane” del SDN. Sin embargo, los switch tradicionales tienen un control distribuido y cada switch, en el propio hardware, manejan su propia lógica de control basados en sus tablas de direcciones Mac y políticas de configuración para decidir si hay que filtrar algún paquete.
+Los switch openflow tienen un control centralizado donde la lógica de red se separa del hardware y se maneja desde el “control plane” del SDN, es desde este lugar del que se toma la decisiones de filtrado de paquetes, eleccion de flujo del paquete, etc. Sin embargo, los switch tradicionales tienen un control distribuido y cada switch, en el propio hardware, manejan su propia lógica de control basados en sus tablas de direcciones Mac y políticas de configuración para decidir si hay que filtrar algún paquete.
 
 
 _**¿Se pueden reemplazar todos los routers de la Intenet por Switches OpenFlow? Piense en el escenario interASes para
 elaborar su respuesta**_
 
-Reemplazar todos los routers de internet con switches openflow no sería posible por una serie de razones, por ejemplo, estos operan en distintas capas, los routers en la capa de red mientras que los switches en la capa de enlace. Teniendo en cuenta los escenarios SA, los routers están preparados para gestionar tráfico a una gran escala y utilizan protocolos más complejos que los utilizados por los switches, como por ejemplo el protocolo de enrutamiento BGP (Border Gateway Protocolo)
+Teniendo en cuenta los escenarios SA, los routers están preparados para gestionar tráfico a una gran escala dado que utilizan hardware especialido (ASICs) para procecar rapidamente los paquetes, sin embargo en los casos de los switches openFlow requieren una conexion constante con el plano de control para tomar decisiones de enrutamiento, accion que podria agregar latencia. Ademas, los routers utilizan protocolos más complejos que los utilizados por los switches, como por ejemplo el protocolo de enrutamiento BGP (Border Gateway Protocolo), utilizado precisamente a la hora de mantener conexiones entre distintos sistemas autonomos (AS)
 
 ## Dificultades encontradas
 
@@ -122,3 +122,4 @@ Reemplazar todos los routers de internet con switches openflow no sería posible
 
 ## Conclusiones
 
+El trabajo practico nos permitio entender mas en profundidad como funcionan las "Software Defined Networks" y darnos la experiencia de poder separar el plano de datos, donde se encuentran los switches generados por nuestra topologia lineal de N switches variables, del plano de control, de forma que pudimos programar en el mismo, la logica que nos permite decidir que paquetes filtrar atravez del switch que actua como firewall utilizando una serie de reglas definidas por nosotros mismos.
