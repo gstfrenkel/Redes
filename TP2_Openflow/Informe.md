@@ -54,7 +54,7 @@ Una vez verificado el correcto funcionamiento de la red, vamos a modifcar el con
 utilizando el protocolo UDP.
 3. Se debe elegir dos hosts cualquiera, y los mismos no deben poder comunicarse de ninguna forma.
 
-## Readme
+## Documentación (Readme)
 
 ### Requisitos de instalación
 
@@ -177,8 +177,7 @@ La diferencia entre un switch openflow y uno convencional radica en el control d
 Los switch openflow tienen un control centralizado donde la lógica de red se separa del hardware y se maneja desde el “control plane” del SDN, es desde este lugar del que se toma la decisiones de filtrado de paquetes, eleccion de flujo del paquete, etc. Sin embargo, los switch tradicionales tienen un control distribuido y cada switch, en el propio hardware, manejan su propia lógica de control basados en sus tablas de direcciones Mac y políticas de configuración para decidir si hay que filtrar algún paquete.
 
 
-_**¿Se pueden reemplazar todos los routers de la Intenet por Switches OpenFlow? Piense en el escenario interASes para
-elaborar su respuesta**_
+_**¿Se pueden reemplazar todos los routers de la Intenet por Switches OpenFlow? Piense en el escenario interASes para elaborar su respuesta**_
 
 Teniendo en cuenta los escenarios SA, los routers están preparados para gestionar tráfico a una gran escala dado que utilizan hardware especializado (ASICs) para procesar rápidamente los paquetes, sin embargo en los casos de los switches openFlow requieren una conexión constante con el plano de control para tomar decisiones de enrutamiento, acción que podría agregar latencia. Además, los routers utilizan protocolos más complejos que los utilizados por los switches, como por ejemplo el protocolo de enrutamiento BGP (Border Gateway Protocol), utilizado precisamente a la hora de mantener conexiones entre distintos sistemas autónomos (AS).
 
@@ -186,7 +185,7 @@ Teniendo en cuenta los escenarios SA, los routers están preparados para gestion
 
 - Instalar dependencias.
 - Setear el firewall con OpenFlow.
-- Parchear código de Pox en python3.
+- Fix en código de Pox para python3.
 
 ## Conclusiones
 
