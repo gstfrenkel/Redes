@@ -112,7 +112,7 @@ Los switch openflow tienen un control centralizado donde la lógica de red se se
 _**¿Se pueden reemplazar todos los routers de la Intenet por Switches OpenFlow? Piense en el escenario interASes para
 elaborar su respuesta**_
 
-Teniendo en cuenta los escenarios SA, los routers están preparados para gestionar tráfico a una gran escala dado que utilizan hardware especialido (ASICs) para procecar rapidamente los paquetes, sin embargo en los casos de los switches openFlow requieren una conexion constante con el plano de control para tomar decisiones de enrutamiento, accion que podria agregar latencia. Ademas, los routers utilizan protocolos más complejos que los utilizados por los switches, como por ejemplo el protocolo de enrutamiento BGP (Border Gateway Protocolo), utilizado precisamente a la hora de mantener conexiones entre distintos sistemas autonomos (AS)
+Teniendo en cuenta los escenarios SA, los routers están preparados para gestionar tráfico a una gran escala dado que utilizan hardware especializado (ASICs) para procesar rápidamente los paquetes, sin embargo en los casos de los switches openFlow requieren una conexión constante con el plano de control para tomar decisiones de enrutamiento, acción que podría agregar latencia. Además, los routers utilizan protocolos más complejos que los utilizados por los switches, como por ejemplo el protocolo de enrutamiento BGP (Border Gateway Protocol), utilizado precisamente a la hora de mantener conexiones entre distintos sistemas autónomos (AS)
 
 ## Dificultades encontradas
 
