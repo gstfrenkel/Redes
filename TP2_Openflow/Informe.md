@@ -116,10 +116,10 @@ Teniendo en cuenta los escenarios SA, los routers están preparados para gestion
 
 ## Dificultades encontradas
 
+- Instalar dependencias.
 - Setear el firewall con OpenFlow.
-- 
--
+- Parchear código de Pox en python3.
 
 ## Conclusiones
 
-El trabajo practico nos permitio entender mas en profundidad como funcionan las "Software Defined Networks" y darnos la experiencia de poder separar el plano de datos, donde se encuentran los switches generados por nuestra topologia lineal de N switches variables, del plano de control, de forma que pudimos programar en el mismo, la logica que nos permite decidir que paquetes filtrar atravez del switch que actua como firewall utilizando una serie de reglas definidas por nosotros mismos.
+El trabajo práctico nos permitió entender más en profundidad como funcionan las "Software Defined Networks" y darnos la experiencia de poder separar el plano de datos, donde se encuentran los switches generados por nuestra topologia lineal de N switches variables, del plano de control, de forma que pudimos programar en el mismo la lógica que nos permite decidir qué paquetes filtrar a través del switch que tiene configurado un firewall, utilizando una serie de reglas definidas por nosotros mismos.
