@@ -67,7 +67,7 @@ utilizando el protocolo UDP.
 1. Dar permisos de ejecución al script `run_server.sh`:
 
 ```
-chmod -x run_server.sh
+chmod +x run_server.sh
 ```
 
 2. Ejecutar con:
@@ -81,7 +81,7 @@ chmod -x run_server.sh
 1. Dar permisos de ejecución al script `run_topo.sh`:
 
 ```
-chmod -x run_topo.sh
+chmod +x run_topo.sh
 ```
 
 2. Ejecutar con:
