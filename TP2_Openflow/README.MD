@@ -43,7 +43,7 @@ chmod -x run_server.sh
 2. Ejecutar con:
 
 ```
-./run_server.sh
+./run_firewall.sh
 ```
 
 ## Levantar topología con switchs variable
@@ -57,7 +57,7 @@ chmod -x run_topo.sh
 2. Ejecutar con:
 
 ```
-./run_topo.sh
+./run_topo.sh <cantidad de switches>
 ```
 
 ## Ejecutar pruebas con iperf

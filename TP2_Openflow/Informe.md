@@ -44,6 +44,22 @@ Para ello se tuvo como objetivo implementar una topología dinámica, donde a tr
 
 ### 1. descartar todos los mensajes cuyo puerto destino sea 80.
 
+Se puede observar que al iniciar el servidor con puerto 80 utilizando el protocolo tcp en h4:
+
+![1-srv-port-80](images/1-srv-port-80.png)
+
+Al momento de generar una conexión con un cliente en h2 se puede ver que se rechazan las conexiones provenientes de h2.
+
+![1-cl-port-80-refused](images/1-cl-port-80-refused.png)
+
+Al iniciar el servidor con puerto distinto de 80, en este caso con un puerto 12345:
+
+![1-srv-port-!80.png](images/1-srv-port-!80.png)
+
+Al momento de generar una conexión con un cliente en h2 se puede ver que se envían los mensajes sin problemas.
+
+![1-cl-port-!80-ok](images/1-cl-port-!80-ok.png)
+
 ### 2. descartar todos los mensajes que provengan del host 1, tengan como puerto destino el 5001, y esten utilizando el protocolo UDP.
 
 Se puede observar que al iniciar el servidor con puerto 5001 utilizando el protocolo udp con el flag `-u` en h4:
